@@ -5,6 +5,7 @@ import torch.nn as nn
 from collections import OrderedDict
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 from utils.get_parts import get_model,get_loss, get_optimizer, get_schedule
+from utils.tools import mk_dirs
 
 
 class MODEL(nn.Module):
@@ -16,9 +17,7 @@ class MODEL(nn.Module):
         self.save_opts = opts['save']
         self.start_epoch = 0
         self.device = torch.device('cuda' if  self.train_opts['gpu_ids'] is not None else 'cpu')
-        
-
-        
+        self.load()
         
     def model_to_device(self, network):
         network = network.to(self.device)
@@ -34,24 +33,24 @@ class MODEL(nn.Module):
         return network
         
     def load(self):
-        print('000')
-        
         self.log_dict = OrderedDict()
+        self.define_save_dir()
         self.G_model = get_model(self.G_opts['network'],self.G_opts['net_param'])
         self.model_to_device(self.G_model)
         self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'],self.G_opts['Loss_fn']['weight'])
-        self.G_optimizer = get_optimizer(optim = self.G_opts['optimizer']['name'],
+        self.G_optimizer = get_optimizer(optim_name = self.G_opts['optimizer']['name'],
                                          network = self.G_model,
-                                         opts = self.G_opts['optimizer']['param'])
-        self.G_scheduler = get_schedule(scheduler = self.G_opts['lr_scheduler']['name'], 
+                                         optim_param = self.G_opts['optimizer']['param'])
+        self.G_scheduler = get_schedule(scheduler_name = self.G_opts['lr_scheduler']['name'], 
                                        optimizer = self.G_optimizer, 
-                                       opts = self.G_opts['lr_scheduler']['param'])
+                                       schedule_param = self.G_opts['lr_scheduler']['param'])
         if self.train_opts['E_decay'] > 0:
             self.netE = get_model(self.G_opts['network'],self.G_opts['params']).to(self.device).eval()
             
     def feed_data(self,sample_batch):
-        self.L,self.H = sample_batch
-    
+        self.L ,self.H= sample_batch
+        self.L = self.L    .to(self.device)
+        self.H = self.H    .to(self.device)
     def forward_G(self):
         self.P = self.G_model(self.L)
     
@@ -102,11 +101,13 @@ class MODEL(nn.Module):
         self.save_dir['save_dir'] = self.save_opts['dir']
         self.save_dir['model_path']  = os.path.join(self.save_dir['save_dir'],exp_version,'checkpoint')
         self.save_dir['log_path']  = os.path.join(self.save_dir['save_dir'],exp_version)
+        mk_dirs(self.save_dir['save_dir'])
+        mk_dirs(self.save_dir['model_path'])
     
     def load_param(self,network_label):
         if self.save_opts['resume']:
-            g_model_path = os.path.join(self.save_dir['model_path'],network_label+'G_net.pth')
-            orther_path = os.path.join(self.save_dir['model_path'],network_label,'G_net_orthers.pth')
+            g_model_path = os.path.join(self.save_dir['model_path'], f'G_net_{network_label}.pth')
+            orther_path = os.path.join(self.save_dir['model_path'],f'G_net_{network_label}_orthers.pth')
             if self.train_opts['E_decay']>0:
                 e_model_path = os.path.join(self.save_dir['model_path'],network_label+'E_net.pth')
                 

@@ -1,15 +1,16 @@
 train:
   #  定义网络与网络参数
+  seed: 42
   gan_type:
   lr_update_per_step: False
-  version: '001'
+  version: "001"
   gpu_ids: [0]
-
+  ncols: 80
   E_decay: 0
 
   dist: False
-  find_unused_parameters: False
-  _set_static_graph: False
+  find_unused_parameters: False 
+  _set_static_graph: False # 使用静态图
 
   G_net:
     network: resnet
@@ -17,12 +18,12 @@ train:
       in_dim: 0
       out_dim: 0
     Loss_fn:
-      loss: 
-      - L1loss 
-      - MSELoss
-      weight: 
-      - 1
-      - 1
+      loss:
+        - L1loss
+        - MSELoss
+      weight:
+        - 1
+        - 1
     optimizer:
       name: Adam
       param:
@@ -32,7 +33,7 @@ train:
     lr_scheduler:
       name: MultiStepLR
       param:
-        milestones: 5
+        milestones: [10, 20, 30]
         gamma: 0.1
         last_epoch: -1
 
@@ -56,8 +57,29 @@ train:
           gamma: 0.1
           last_epoch: -1
 
+data:
+  prefetch_generator: True
+  datapath: None
+  trainset_path: None
+  testset_path: None
+  validset_path: None
+
+  data_loader_param:
+    batch_size: 1
+    shuffle: True
+    num_workers: 4
+    drop_last: True
+    pin_memory: True
+
+  to_bad_fn_param:
+    mask_path:
+    mask_type:
+    mask_level:
+
 save:
+  On_tensorboard: True
   resume: True
+  resume_lable: best
   dir: "result"
   epoch: 1
   best: True
