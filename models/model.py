@@ -77,7 +77,7 @@ class MODEL(nn.Module):
         
     def save_network(self,network,network_label = 'G_net'):
         save_filename = '{}.pth'.format(network_label)
-        save_path = os.path.join(self.save_opts['dir'], save_filename)
+        save_path = os.path.join(self.save_dir['model_path'], save_filename)
         network = self.get_bare_model(network)
         state_dict = network.state_dict()
         for key, param in state_dict.items():
@@ -87,7 +87,7 @@ class MODEL(nn.Module):
     def save_orthers(self,optimizer,scheduler, network_label = 'G_net',epoch = 0):
         network_label += '_orthers'
         save_filename = '{}.pth'.format(network_label)
-        save_path = os.path.join(self.save_opts['dir'], save_filename)
+        save_path = os.path.join(self.save_dir['model_path'], save_filename)
         state_dict = {
             "optimizer_state_dict": optimizer.state_dict(),
             "schedule_state_dict": scheduler.state_dict(),
@@ -96,15 +96,33 @@ class MODEL(nn.Module):
         }
         torch.save(state_dict, save_path)
         
-    def load_param(self):
+    def define_save_dir(self):
+        exp_version = self.train_opts['version']
+        self.save_dir = OrderedDict()
+        self.save_dir['save_dir'] = self.save_opts['dir']
+        self.save_dir['model_path']  = os.path.join(self.save_dir['save_dir'],exp_version,'checkpoint')
+        self.save_dir['log_path']  = os.path.join(self.save_dir['save_dir'],exp_version)
+    
+    def load_param(self,network_label):
         if self.save_opts['resume']:
-            
-            pass
+            g_model_path = os.path.join(self.save_dir['model_path'],network_label+'G_net.pth')
+            orther_path = os.path.join(self.save_dir['model_path'],network_label,'G_net_orthers.pth')
+            if self.train_opts['E_decay']>0:
+                e_model_path = os.path.join(self.save_dir['model_path'],network_label+'E_net.pth')
+                
         if self.save_opts['pretrained']:
-            self.load_network(self.G_model,self.save_opts['pretrain_path']['G_net_path'],self.save_opts['net_load_strict'])
-            self.load_orthers(self.save_opts['pretrain_path']['G_orthers_path'],
-                              self.G_optimizer,self.G_scheduler
-                              )
+            g_model_path = self.save_opts['pretrain_path']['G_net_path']
+            orther_path = self.save_opts['pretrain_path']['G_orthers_path']
+            if self.train_opts['E_decay']>0:
+                e_model_path = self.save_opts['pretrain_path']['E_net_path']
+                
+            
+        
+        self.load_network(self.G_model,g_model_path,self.save_opts['net_load_strict'])
+        if self.train_opts['E_decay']>0:
+            self.load_network(self.G_model,e_model_path,self.save_opts['net_load_strict'])
+        self.load_orthers(orther_path,
+                            self.G_optimizer,self.G_scheduler)
 
     def load_network(self,network,network_path,strict =True,param_key='params'):
         network = self.get_bare_model(network)

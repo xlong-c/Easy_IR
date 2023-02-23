@@ -2,7 +2,7 @@ train:
   #  定义网络与网络参数
   gan_type:
   lr_update_per_step: False
-
+  version: '001'
   gpu_ids: [0]
 
   E_decay: 0

@@ -34,9 +34,7 @@ def get_optimizer(optim, network, opts):
         else:
             print('Params [{:s}] will not optimize.'.format(k))
     optimizer = importlib.import_module('torch.optim', optim)
-    print(opts)
     optim = optimizer(optim_params, opts)
-    
     return optim
 
 def get_schedule(scheduler, optimizer, opts):
