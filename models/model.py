@@ -4,18 +4,22 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 from torch.nn.parallel import DataParallel, DistributedDataParallel
-from Easy_IR.utils.get_parts import get_model,get_loss, get_optimizer, get_schedule
+from utils.get_parts import get_model,get_loss, get_optimizer, get_schedule
 
 
 class MODEL(nn.Module):
     def __init__(self,opts):
+        super(MODEL,self).__init__()
         self.opts = opts
         self.train_opts = opts['train']
-        self.G_opts = opts['train']
+        self.G_opts = opts['train']['G_net']
         self.save_opts = opts['save']
-        
+        self.start_epoch = 0
         self.device = torch.device('cuda' if  self.train_opts['gpu_ids'] is not None else 'cpu')
-    
+        
+
+        
+        
     def model_to_device(self, network):
         network = network.to(self.device)
         if self.train_opts['dist']:
@@ -30,8 +34,10 @@ class MODEL(nn.Module):
         return network
         
     def load(self):
+        print('000')
+        
         self.log_dict = OrderedDict()
-        self.G_model = get_model(self.G_opts['network'],self.G_opts['params'])
+        self.G_model = get_model(self.G_opts['network'],self.G_opts['net_param'])
         self.model_to_device(self.G_model)
         self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'],self.G_opts['Loss_fn']['weight'])
         self.G_optimizer = get_optimizer(optim = self.G_opts['optimizer']['name'],
@@ -39,7 +45,7 @@ class MODEL(nn.Module):
                                          opts = self.G_opts['optimizer']['param'])
         self.G_scheduler = get_schedule(scheduler = self.G_opts['lr_scheduler']['name'], 
                                        optimizer = self.G_optimizer, 
-                                       opts = self.G_opts['lr_scheduler'['param']])
+                                       opts = self.G_opts['lr_scheduler']['param'])
         if self.train_opts['E_decay'] > 0:
             self.netE = get_model(self.G_opts['network'],self.G_opts['params']).to(self.device).eval()
             
@@ -90,11 +96,15 @@ class MODEL(nn.Module):
         }
         torch.save(state_dict, save_path)
         
-    def load(self):
+    def load_param(self):
         if self.save_opts['resume']:
+            
             pass
         if self.save_opts['pretrained']:
             self.load_network(self.G_model,self.save_opts['pretrain_path']['G_net_path'],self.save_opts['net_load_strict'])
+            self.load_orthers(self.save_opts['pretrain_path']['G_orthers_path'],
+                              self.G_optimizer,self.G_scheduler
+                              )
 
     def load_network(self,network,network_path,strict =True,param_key='params'):
         network = self.get_bare_model(network)
@@ -104,13 +114,13 @@ class MODEL(nn.Module):
         network.load_state_dict(state_dict, strict=strict)
     
     def load_orthers(self, orther_path,optimizer,scheduler):
-        state_dict = torch.load(orther_path)
+        state_dict = torch.load(orther_path,map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
         optimizer.load_state_dict(state_dict['optimizer_state_dict'])
         scheduler.load_state_dict(state_dict['schedule_state_dict'])
-        epoch = state_dict["epoch"]
+        self.start_epoch = state_dict["epoch"]
         save_time = state_dict['save_time']
         print('[OK] 自{}保存的模型中加载'.format(save_time))
-        return epoch
+        
         
         
     def lossfn(self,loss,pred,target):

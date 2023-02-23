@@ -12,13 +12,17 @@ train:
   _set_static_graph: False
 
   G_net:
-    network: N
+    network: resnet
     net_param:
       in_dim: 0
       out_dim: 0
     Loss_fn:
-      - loss: L1loss ,L2loss
-      - weight: 1,1
+      loss: 
+      - L1loss 
+      - MSELoss
+      weight: 
+      - 1
+      - 1
     optimizer:
       name: Adam
       param:
