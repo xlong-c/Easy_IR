@@ -12,7 +12,9 @@ train:
   find_unused_parameters: False 
   _set_static_graph: False # 使用静态图
 
-  
+  Metric:
+    - PSNR
+    - NMSE
 
   G_net:
     network: resnet

@@ -39,7 +39,7 @@ class MODEL(nn.Module):
         self.G_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
         self.model_to_device(self.G_model)
         self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
-        self.Metric = get_loss()
+        self.Metric = get_loss(self.train_opts['Metric'], [], True)
         self.G_optimizer = get_optimizer(optim_name=self.G_opts['optimizer']['name'],
                                          network=self.G_model,
                                          optim_param=self.G_opts['optimizer']['param'])
@@ -152,8 +152,11 @@ class MODEL(nn.Module):
         self.P = self.G_model(self.L)
 
     def test_forward(self):
+        self.model.eval()
         self.P = self.G_model(self.L)
-        self.acc_Metric
+        _, Metric_detail = self.lossfn(self.Metric, self.P, self.H)
+        self.model.train()
+        self.log_dict['Metric_detail'] = Metric_detail
 
     @staticmethod
     def lossfn(loss, pred, target):

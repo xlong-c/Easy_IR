@@ -27,11 +27,10 @@ def get_loss_(loss):
         return importlib.import_module('Loss_Metrics', loss['name'])()
 
 
-def get_loss(loss_name: list, loss_weight: list, is_Metric=True):
+def get_loss(loss_name: list, loss_weight: list, is_Metric=False):
     assert len(loss_name) == len(loss_weight)
     losses = []
     for loss in loss_name:
-
         if is_Metric:
             losses.append(get_loss_(loss).eval())
             print(f'[OK] 评估函数{loss} 启用')
@@ -39,6 +38,7 @@ def get_loss(loss_name: list, loss_weight: list, is_Metric=True):
         else:
             losses.append(get_loss_(loss))
             print(f'[OK] 损失函数{loss} 启用')
+
     if is_Metric:
         loss_weight = torch.ones(len(loss_weight))
     return {'loss': losses, 'loss_weight': loss_weight, 'lose_name': loss_name}
