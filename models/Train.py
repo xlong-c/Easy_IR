@@ -50,6 +50,7 @@ class Trainer():
 
         
 
+
         self.logger.define_log_rule(
             'train',
             train_rule

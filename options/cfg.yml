@@ -12,6 +12,8 @@ train:
   find_unused_parameters: False 
   _set_static_graph: False # 使用静态图
 
+  
+
   G_net:
     network: resnet
     net_param:

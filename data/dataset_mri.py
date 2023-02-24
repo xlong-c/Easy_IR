@@ -13,7 +13,7 @@ class Brain_data(Dataset):
     读取大脑数据集  读取的格式应为pickle数据格式  此外，对于训练数据有一个增强
     """
 
-    def __init__(self, path, mode: str, mask: numpy.ndarray, transform=None):
+    def __init__(self, path, mode: str, to_bad_fn, transform=None):
         """
         大脑数据集的读取类的初始化函数， 之后对于使用pytorch读取自身设定的数据集，模仿本方法即可
         :param path 待读取的数据的路径
@@ -27,7 +27,7 @@ class Brain_data(Dataset):
             # self.data = pickle.load(f)  # num 256 256 1
         self.mode = mode
         self.transform = transform
-        self.mask = mask
+        self.to_bad_fn = to_bad_fn
 
         print(mode + ' dataset was loaded successfully! the length is {}'.format(self.__len__()))
         print(f'数据最值   最大值: {self.data.max()}, 最小值: {self.data.min()}')
@@ -46,7 +46,7 @@ class Brain_data(Dataset):
             for f in self.transform:
                 H = f()(H)
         H = ToTensor()(H).reshape(1, 256, 256)
-        L = apply_mask(H, self.mask)
+        L = self.to_bad_fn(H)
         return L, H
 
 
