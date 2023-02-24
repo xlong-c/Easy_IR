@@ -1,6 +1,6 @@
 import os
 
-from Easy_IR.utils.transforms.DWT_IDWT.DWT_IDWT_layer import DWT_2D
+from utils.transforms.DWT_IDWT.DWT_IDWT_layer import DWT_2D
 
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
