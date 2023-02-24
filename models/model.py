@@ -39,6 +39,7 @@ class MODEL(nn.Module):
         self.G_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
         self.model_to_device(self.G_model)
         self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
+        self.Metric = get_loss()
         self.G_optimizer = get_optimizer(optim_name=self.G_opts['optimizer']['name'],
                                          network=self.G_model,
                                          optim_param=self.G_opts['optimizer']['param'])
@@ -49,13 +50,14 @@ class MODEL(nn.Module):
         if self.train_opts['E_decay'] > 0:
             self.netE = get_model(self.G_opts['network'], self.G_opts['params']).to(self.device).eval()
 
-    def feed_data(self, sample_batch):
-        self.L, self.H = sample_batch
-        self.L = self.L.to(self.device)
-        self.H = self.H.to(self.device)
-
-    def forward_G(self):
-        self.P = self.G_model(self.L)
+    def define_save_dir(self):
+        exp_version = self.train_opts['version']
+        self.save_dir = OrderedDict()
+        self.save_dir['save_dir'] = self.save_opts['dir']
+        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], exp_version, 'checkpoint')
+        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'], exp_version)
+        mk_dirs(self.save_dir['save_dir'])
+        mk_dirs(self.save_dir['model_path'])
 
     @staticmethod
     def get_bare_model(network):
@@ -98,15 +100,6 @@ class MODEL(nn.Module):
         }
         torch.save(state_dict, save_path)
 
-    def define_save_dir(self):
-        exp_version = self.train_opts['version']
-        self.save_dir = OrderedDict()
-        self.save_dir['save_dir'] = self.save_opts['dir']
-        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], exp_version, 'checkpoint')
-        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'], exp_version)
-        mk_dirs(self.save_dir['save_dir'])
-        mk_dirs(self.save_dir['model_path'])
-
     def load_param(self, network_label):
 
         if self.save_opts['pretrained']:
@@ -144,6 +137,24 @@ class MODEL(nn.Module):
         save_time = state_dict['save_time']
         print('[OK] 自{}保存的模型中加载'.format(save_time))
 
+    def get_res(self):
+        return self.L, self.P, self.H
+
+    def get_log_dict(self):
+        return self.log_dict
+
+    def feed_data(self, sample_batch):
+        self.L, self.H = sample_batch
+        self.L = self.L.to(self.device)
+        self.H = self.H.to(self.device)
+
+    def forward_G(self):
+        self.P = self.G_model(self.L)
+
+    def test_forward(self):
+        self.P = self.G_model(self.L)
+        self.acc_Metric
+
     @staticmethod
     def lossfn(loss, pred, target):
         loss_detail = []
@@ -174,13 +185,3 @@ class MODEL(nn.Module):
 
         if self.train_opts['E_decay'] > 0:
             self.update_E(self.train_opts['E_decay'])
-
-    def get_res(self):
-        return self.L, self.P, self.H
-
-    def get_log_dict(self):
-        return self.log_dict
-
-    def test_forward(self):
-        self.P = self.G_model(self.L)
-        self.acc_Metric
