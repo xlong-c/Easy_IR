@@ -177,6 +177,9 @@ class MODEL(nn.Module):
     def get_log_dict(self):
         return self.log_dict
     
+    def test_forward_G(self):
+        self.P = self.G_model(self.L)
+        self.accmarxic
 
                     
         

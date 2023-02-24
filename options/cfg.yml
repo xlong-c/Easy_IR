@@ -7,7 +7,7 @@ train:
   gpu_ids: [0]
   ncols: 80
   E_decay: 0
-
+  num_epoch: 10
   dist: False
   find_unused_parameters: False 
   _set_static_graph: False # 使用静态图
