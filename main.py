@@ -9,3 +9,4 @@ if __name__ == "__main__":
     opts = get_options('options/cfg.yml')
     tainer = Trainer(opts)
     tainer.train_stage()
+    tainer.test_stage()

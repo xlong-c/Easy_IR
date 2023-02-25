@@ -27,7 +27,7 @@ class Trainer():
         self.set_seed()
         self.model = MODEL(opts)
         self.logger = Auto_Logger(path=opts['save']['dir'],
-                                  log_types=['train', 'test', 'test'],
+                                  log_types=['train', 'valid', 'test'],
                                   On_tensorboard=opts['save']['On_tensorboard'])
         self.data_loader = OrderedDict()
         self.trainer_log_dict = OrderedDict()
@@ -44,20 +44,20 @@ class Trainer():
         G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         loss_rule = []
         for loss in G_loss:
-            loss_rule.append(loss + '  {:<10.4f}')
+            loss_rule.append(loss + '  {:<8.4f}')
         loss_rule = '  '.join(loss_rule)
-        epoch_num = '{:0<3}'.format(self.train_opts['num_epoch'])
+        epoch_num = '{:>3}'.format(self.train_opts['num_epoch'])
         train_rule = 'EPOCH: ' + epoch_num + \
-                     '/{:0<3} LOSS: {:<10.4f} ' + loss_rule + time_rule + 'lr: {:<10.4f}'
-        # epoch t_loss losses time lr
+                     '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + loss_rule + time_rule + '  lr: {:<8.4f}'
+        # epoch idx t_loss losses time lr
         metrices = self.train_opts['Metric']
         metric_rule = []
         for metric in metrices:
-            metric_rule.append(metric + '  {:<10.4f}')
+            metric_rule.append(metric + '  {:<8.4f}')
         metric_rule = '  '.join(metric_rule)
 
         valid_rule = 'EPOCH: ' + epoch_num + \
-                     '/{:0<3} VAL_MODE ' + metric_rule + time_rule + 'lr: {:<10.4f}'
+                     '/{:>3} VAL_MODE ' + metric_rule + time_rule + '  lr: {:<8.4f}'
         # epoch metric time lr
         test_rule = 'TEST_MODE ' + metric_rule + time_rule
         # metric time
@@ -129,13 +129,19 @@ class Trainer():
         return loader
 
     def train_stage(self):
-        best = 0
+        best = -1e10
         for epoch in range(self.model.start_epoch, self.train_opts['num_epoch'] + 1):
             if self.train_opts['dist']:
                 self.train_sampler.set_epoch(epoch)
             last_niter = epoch * self.set_len['train']
             self.train_a_epoch(epoch, last_niter)
-            self.val_a_epoch(epoch)
+            temp_acc = self.val_a_epoch(epoch)
+            print('EPOCH {} {}'.format(epoch, temp_acc))
+            if temp_acc[0] > best:
+                print('the BEST is NEW')
+                self.model.save('', is_best=True, epoch=epoch)
+                best = temp_acc[0]
+        self.model.save('last', is_best=False, epoch=-1)
 
     def val_a_epoch(self, epoch):
         loop = tqdm(enumerate(self.data_loader['test']),
@@ -158,12 +164,13 @@ class Trainer():
                    time.time() - val_time,
                    self.model.get_log_dict()['G_lr']
                    ]  # epoch metric time lr
-        self.logger.rule_log('test', log_msg)
+        self.logger.rule_log('valid', log_msg)
         self.logger.rule_writer_log(
             'valid',
             Metric_detail_avg,
             epoch
         )
+        return Metric_detail_avg
 
     def train_a_epoch(self, epoch, last_niter):
         loop = tqdm(enumerate(self.data_loader['train']),
@@ -176,11 +183,12 @@ class Trainer():
             self.model.optim_parameters()
             log = self.model.get_log_dict()
             log_msg = [epoch,
+                       idx,
                        log['G_loss'],
                        *log['G_loss_detail'],
                        time.time() - step_time,
                        log['G_lr']
-                       ]  # epoch t_loss losses time lr
+                       ]  # epoch idx t_loss losses time lr
             self.logger.rule_log('train', log_msg)
             self.logger.rule_writer_log(
                 'train',
@@ -220,7 +228,7 @@ class Trainer():
             )
         self.logger.log('test', 'THE LAST RESULT')
 
-        Metric_detail_avg = sum(Metric_detail_avg) / self.set_len['test']
+        Metric_detail_avg = np.sum(np.array(Metric_detail_avg), axis=0) / self.set_len['test']
         log_msg = [
             *Metric_detail_avg,
             time.time() - test_time,

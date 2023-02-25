@@ -73,7 +73,7 @@ class MODEL(nn.Module):
 
     def save(self, network_label, is_best=False, epoch=0):
         if is_best:
-            network_label = 'best_' + network_label
+            network_label = 'best' + network_label
         self.save_G(network_label, epoch)
 
     def save_G(self, network_label, epoch):
@@ -127,6 +127,8 @@ class MODEL(nn.Module):
         if not os.path.exists( network_path):
             print('[!!] 模型文件不存在，不加载模型')
             return
+        else:
+            print('[OK] 加载位于'+network_path+'的模型')
         network = self.get_bare_model(network)
         state_dict = torch.load(network_path)
         if param_key in state_dict.keys():
@@ -137,6 +139,8 @@ class MODEL(nn.Module):
         if not os.path.exists(orther_path):
             print('[!!] 模型文件不存在，不加载模型其他组件参数')
             return
+        else:
+            print('[OK] 加载位于' + orther_path + '的模型组件')
         state_dict = torch.load(orther_path,
                                 map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
         optimizer.load_state_dict(state_dict['optimizer_state_dict'])
