@@ -27,7 +27,7 @@ class NMSE(nn.Module):
                           stacklevel=2)
         nmse_a = torch.sqrt(torch.sum(torch.pow((gen - target), 2), dim=[1, 2, 3]))
         nmse_b = torch.sqrt(torch.sum(torch.pow(target, 2), dim=[1, 2, 3]))
-        return nmse_a / nmse_b  # tensor [batch]
+        return torch.mean(nmse_a / nmse_b)  # tensor [batch]
 
 
 # 计算一维的高斯分布向量

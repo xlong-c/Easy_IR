@@ -12,6 +12,8 @@ train:
   find_unused_parameters: False 
   _set_static_graph: False # 使用静态图
 
+
+
   Metric:
     - PSNR
     - NMSE
@@ -33,11 +35,11 @@ train:
       param:
         lr: 0.001
         weight_decay: 0
-
+    optimizer_clipgrad: False
     lr_scheduler:
       name: MultiStepLR
       param:
-        milestones: [10, 20, 30]
+        milestones: [100, 2000, 3000]
         gamma: 0.1
         last_epoch: -1
 

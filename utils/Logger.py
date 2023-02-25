@@ -132,6 +132,7 @@ class Auto_Logger():
             log_type (str): 日志分类
             rule (str): 日志规则
         """
+        print(log_type +' 日志记录规则: ' + rule)
         self.rule_tmp_log[log_type] = rule
 
     def rule_log(self, log_type, log, verbose=False):
@@ -173,7 +174,7 @@ class Auto_Logger():
                                    )
         self.writer.flush()
 
-    def set_writer_rule(self, log_type: str, rule: list):
+    def define_writer_rule(self, log_type: str, rule: list):
         assert self.writer is not None
         """设置tensorboard规则
 

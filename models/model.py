@@ -15,7 +15,7 @@ class MODEL(nn.Module):
         self.train_opts = opts['train']
         self.G_opts = opts['train']['G_net']
         self.save_opts = opts['save']
-        self.start_epoch = 0
+        self.start_epoch = 1
         self.device = torch.device('cuda' if self.train_opts['gpu_ids'] is not None else 'cpu')
         self.load()
 
@@ -160,18 +160,17 @@ class MODEL(nn.Module):
         self.P = self.G_model(self.L)
 
     def test_forward(self):
-        self.model.eval()
+        self.G_model.eval()
         self.P = self.G_model(self.L)
         _, Metric_detail = self.lossfn(self.Metric, self.P, self.H)
-        self.model.train()
         self.log_dict['Metric_detail'] = Metric_detail
 
     @staticmethod
     def lossfn(loss, pred, target):
         loss_detail = []
         loss_total = 0
-        for idx, loss in enumerate(loss['loss']):
-            ll = loss(pred, target) * loss['loss_weight'][idx]
+        for idx, ls in enumerate(loss['loss']):
+            ll = ls(pred, target) * loss['loss_weight'][idx]
             loss_detail.append(ll.item())
             loss_total += ll
         return loss_total, loss_detail
@@ -182,9 +181,9 @@ class MODEL(nn.Module):
         G_loss, G_loss_detail = self.lossfn(self.G_losses, self.P, self.H)
         G_loss.backward()
 
-        G_optimizer_clipgrad = self.train_opts['G_optimizer_clipgrad'] if self.train_opts['G_optimizer_clipgrad'] else 0
+        G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=self.train_opts['G_optimizer_clipgrad'],
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
                                            norm_type=2)
         self.G_optimizer.step()
 
