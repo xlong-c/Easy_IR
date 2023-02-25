@@ -26,7 +26,7 @@ class Trainer():
         self.rank, self.world_size = get_dist_info()
         self.set_seed()
         self.model = MODEL(opts)
-        self.logger = Auto_Logger(path=opts['save']['dir'],
+        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'],opts['train']['version']),
                                   log_types=['train', 'valid', 'test'],
                                   On_tensorboard=opts['save']['On_tensorboard'])
         self.data_loader = OrderedDict()
