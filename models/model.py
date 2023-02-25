@@ -37,9 +37,11 @@ class MODEL(nn.Module):
         self.log_dict = OrderedDict()
         self.define_save_dir()
         self.G_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
+        if self.train_opts['E_decay'] > 0:
+            self.E_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
         self.model_to_device(self.G_model)
         self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
-        self.Metric = get_loss(self.train_opts['Metric'], [], True)
+        self.Metric = get_loss(self.train_opts['Metric'], None, True)
         self.G_optimizer = get_optimizer(optim_name=self.G_opts['optimizer']['name'],
                                          network=self.G_model,
                                          optim_param=self.G_opts['optimizer']['param'])
@@ -115,13 +117,16 @@ class MODEL(nn.Module):
         else:
             print('[!!] 不加载模型')
             return
-        self.define_network(self.G_model, g_model_path, self.save_opts['net_load_strict'])
+        self.load_network(self.G_model, g_model_path, self.save_opts['net_load_strict'])
         if self.train_opts['E_decay'] > 0:
-            self.define_network(self.G_model, e_model_path, self.save_opts['net_load_strict'])
+            self.load_network(self.E_model, e_model_path, self.save_opts['net_load_strict'])
         self.load_orthers(orther_path,
                           self.G_optimizer, self.G_scheduler)
 
-    def define_network(self, network, network_path, strict=True, param_key='params'):
+    def load_network(self, network, network_path, strict=True, param_key='params'):
+        if not os.path.exists( network_path):
+            print('[!!] 模型文件不存在，不加载模型')
+            return
         network = self.get_bare_model(network)
         state_dict = torch.load(network_path)
         if param_key in state_dict.keys():
@@ -129,6 +134,9 @@ class MODEL(nn.Module):
         network.load_state_dict(state_dict, strict=strict)
 
     def load_orthers(self, orther_path, optimizer, scheduler):
+        if not os.path.exists(orther_path):
+            print('[!!] 模型文件不存在，不加载模型其他组件参数')
+            return
         state_dict = torch.load(orther_path,
                                 map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
         optimizer.load_state_dict(state_dict['optimizer_state_dict'])

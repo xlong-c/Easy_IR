@@ -205,14 +205,14 @@ class Auto_Logger():
         self.writer.close()
 
 
-myLogger = Auto_Logger('res', ['train', 'test', 'valid'], True)
-a = OrderedDict()
-a['PSNR'] = 44.85858
-myLogger.log_tmp('test', a)
-myLogger.flush('test', verbose= True)
-myLogger.define_log_rule('test', 'PSNR: {:<10.4f}')
-b = [46.66666]
-myLogger.rule_log('test', b, verbose=True)
-myLogger.set_writer_rule('test', ['PSNR', 'NMSE'])
-myLogger.rule_writer_log('test', [46.333, 0.99598], 18)
+# myLogger = Auto_Logger('res', ['train', 'test', 'valid'], True)
+# a = OrderedDict()
+# a['PSNR'] = 44.85858
+# myLogger.log_tmp('test', a)
+# myLogger.flush('test', verbose= True)
+# myLogger.define_log_rule('test', 'PSNR: {:<10.4f}')
+# b = [46.66666]
+# myLogger.rule_log('test', b, verbose=True)
+# myLogger.set_writer_rule('test', ['PSNR', 'NMSE'])
+# myLogger.rule_writer_log('test', [46.333, 0.99598], 18)
 # a = {"PSNR":44.31588}

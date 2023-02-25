@@ -63,10 +63,10 @@ train:
 
 data:
   prefetch_generator: True
-  datapath: None
-  trainset_path: None
-  testset_path: None
-  validset_path: None
+  data_path: D:/dataset/mini_test
+  trainset_path: training_mini.pickle
+  testset_path: testing_mini.pickle
+  validset_path: validation_mini.pickle
 
   data_loader_param:
     batch_size: 1
@@ -76,9 +76,9 @@ data:
     pin_memory: True
 
   to_bad_fn_param:
-    mask_path:
-    mask_type:
-    mask_level:
+    mask_path: data/mask
+    mask_type: gaussian1d
+    mask_level: 30
 
 save:
   On_tensorboard: True

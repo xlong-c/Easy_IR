@@ -22,6 +22,7 @@ class Brain_data(Dataset):
         :param transform: 训练图像增强时请传入transform
         """
         ### 数据集的数据信息在-1到1之间
+        print(path)
         with open(path, 'rb') as f:
             self.data = joblib.load(f)
             # self.data = pickle.load(f)  # num 256 256 1

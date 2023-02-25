@@ -1,3 +1,4 @@
+import os
 import time
 import torch
 import numpy as np
@@ -8,12 +9,11 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
+from models.model import MODEL
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset
 from utils.utils_dist import get_dist_info
-
-import model
 
 
 class Trainer():
@@ -25,7 +25,7 @@ class Trainer():
         self.seed = opts['train']['seed']
         self.rank, self.world_size = get_dist_info()
         self.set_seed()
-        self.model = model.MODEL(opts)
+        self.model = MODEL(opts)
         self.logger = Auto_Logger(path=opts['save']['dir'],
                                   log_types=['train', 'test', 'test'],
                                   On_tensorboard=opts['save']['On_tensorboard'])
@@ -79,28 +79,32 @@ class Trainer():
         self.logger.define_log_rule('test', rule=self.train_opts['Metric'])
 
     def load(self):
-
         self.model.load_param(self.save_opts['resume_lable'])
-        self.data_loader['train'] = self.get_dataloader(data_path=self.data_opts['trainset_path'],
+
+        train_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['trainset_path'])
+        valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path'])
+        test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path'])
+
+        self.data_loader['train'] = self.get_dataloader(data_path=train_dataset_path,
                                                         mode='train',
                                                         prefetch_generator=self.data_opts['prefetch_generator'],
                                                         to_bad_fn_param=self.data_opts['to_bad_fn_param'],
                                                         dataLoader_param=self.data_opts['data_loader_param'])
-        self.data_loader['test'] = self.get_dataloader(data_path=self.data_opts['testset_path'],
-                                                       mode='test',
-                                                       prefetch_generator=self.data_opts['prefetch_generator'],
-                                                       to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                       dataLoader_param=self.data_opts['data_loader_param'])
+        self.data_loader['valid'] = self.get_dataloader(data_path=valid_dataset_path,
+                                                        mode='valid',
+                                                        prefetch_generator=self.data_opts['prefetch_generator'],
+                                                        to_bad_fn_param=self.data_opts['to_bad_fn_param'],
+                                                        dataLoader_param=self.data_opts['data_loader_param'])
 
-        self.data_loader['test'] = self.get_dataloader(data_path=self.data_opts['testset_path'],
+        self.data_loader['test'] = self.get_dataloader(data_path=test_dataset_path,
                                                        mode='test',
                                                        prefetch_generator=self.data_opts['prefetch_generator'],
                                                        to_bad_fn_param=self.data_opts['to_bad_fn_param'],
                                                        dataLoader_param=self.data_opts['data_loader_param'])
         self.set_len = OrderedDict()
         self.set_len['train'] = len(self.data_loader['train'])
-        self.set_len['test'] = len(self.data_loader['train'])
-        self.set_len['test'] = len(self.data_loader['train'])
+        self.set_len['valid'] = len(self.data_loader['valid'])
+        self.set_len['test'] = len(self.data_loader['test'])
         self.load_logger()
 
     def get_dataloader(self, data_path, mode, prefetch_generator, to_bad_fn_param, dataLoader_param):
@@ -110,7 +114,7 @@ class Trainer():
         dataloader = DataLoaderX(dataset, shuffle=(
                 mode == 'train'), **dataLoader_param)
 
-        if self.train_opts['dist'] and mode is 'train':
+        if self.train_opts['dist'] and mode == 'train':
             self.train_sampler = DistributedSampler(dataset,
                                                     shuffle=self.data_opts['shuffle'],
                                                     drop_last=self.data_opts['shuffle'],
@@ -228,4 +232,3 @@ class Trainer():
             time.time() - test_time,
         ]  # metric time
         self.logger.rule_log('test', log_msg)
-
