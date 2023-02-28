@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
-from models.model import MODEL
+from models.MODEL import MODEL
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset
@@ -18,7 +18,6 @@ from utils.utils_dist import get_dist_info
 
 class Trainer():
     def __init__(self, opts):
-
         self.train_opts = opts['train']
         self.data_opts = opts['data']
         self.save_opts = opts['save']
