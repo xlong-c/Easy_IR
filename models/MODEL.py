@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 from torch.nn.parallel import DataParallel, DistributedDataParallel
+
+from utils.EMA import EMA
 from utils.get_parts import get_model, get_loss, get_optimizer, get_schedule
 from utils.tools import mk_dirs
 
@@ -40,21 +42,21 @@ class MODEL(nn.Module):
     def load(self):
         self.log_dict = OrderedDict()
         self.define_save_dir()
-        self.G_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
-        if self.train_opts['E_decay'] > 0:
-            self.E_model = get_model(self.G_opts['network'], self.G_opts['net_param'])
-        self.model_to_device(self.G_model)
-        self.G_losses = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
-        self.Metric = get_loss(self.train_opts['Metric'], None, True)
-        self.G_optimizer = get_optimizer(optim_name=self.G_opts['optimizer']['name'],
-                                         network=self.G_model,
-                                         optim_param=self.G_opts['optimizer']['param'])
-        self.G_scheduler = get_schedule(scheduler_name=self.G_opts['lr_scheduler']['name'],
-                                        optimizer=self.G_optimizer,
-                                        schedule_param=self.G_opts['lr_scheduler']['param'])
 
+        self.netG = get_model(self.G_opts['network'], self.G_opts['net_param'])
+        self.model_to_device(self.netG)
+        self.lossesG = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
+
+        self.optimizerG = get_optimizer(optim_name=self.G_opts['optimizer']['name'],
+                                        network=self.netG,
+                                        optim_param=self.G_opts['optimizer']['param'])
+        self.schedulerG = get_schedule(scheduler_name=self.G_opts['lr_scheduler']['name'],
+                                       optimizer=self.optimizerG,
+                                       schedule_param=self.G_opts['lr_scheduler']['param'])
+
+        self.Metric = get_loss(self.train_opts['Metric'], None, True)
         if self.train_opts['E_decay'] > 0:
-            self.netE = get_model(self.G_opts['network'], self.G_opts['params']).to(self.device).eval()
+            self.optimizerG = EMA(self.optimizerG, self.train_opts['E_decay'])
 
     def define_save_dir(self):
         """
@@ -131,12 +133,10 @@ class MODEL(nn.Module):
         self.L = self.L.to(self.device)
         self.H = self.H.to(self.device)
 
-    def forward_G(self):
-        self.P = self.G_model(self.L)
 
     def test_forward(self):
-        self.G_model.eval()
-        self.P = self.G_model(self.L)
+        self.netG.eval()
+        self.P = self.netG(self.L)
         _, Metric_detail = self.lossfn(self.Metric, self.P, self.H)
         self.log_dict['Metric_detail'] = Metric_detail
 
@@ -150,23 +150,23 @@ class MODEL(nn.Module):
             loss_total += ll
         return loss_total, loss_detail
 
-    def optim_parameters(self):
-        self.G_optimizer.zero_grad()
-        self.forward_G()
-        G_loss, G_loss_detail = self.lossfn(self.G_losses, self.P, self.H)
+    def train_forward(self, global_step):
+        self.P = self.netG(self.L)
+
+        G_loss, G_loss_detail = self.lossfn(self.lossesG, self.P, self.H)
         G_loss.backward()
 
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
             torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
                                            norm_type=2)
-        self.G_optimizer.step()
+        self.optimizerG.step()
 
         self.log_dict['G_loss'] = G_loss.item()
         self.log_dict['G_loss_detail'] = G_loss_detail
-        self.log_dict['G_lr'] = self.G_scheduler.get_last_lr()[0]
+        self.log_dict['G_lr'] = self.schedulerG.get_last_lr()[0]
         if not self.train_opts['lr_update_per_step']:
-            self.G_scheduler.step()  # 按步数来更行学习率
+            self.schedulerG.step()  # 按步数来更行学习率
 
         if self.train_opts['E_decay'] > 0:
             self.update_E(self.train_opts['E_decay'])

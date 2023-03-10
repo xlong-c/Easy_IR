@@ -31,6 +31,8 @@ res
     -test.log
     -event
 '''
+
+
 class Auto_Logger():
     def __init__(self, path, log_types: list, On_tensorboard=False):
         """日志生成
@@ -66,7 +68,7 @@ class Auto_Logger():
             self.loggers[log_type].addHandler(logging.FileHandler(log_path))
             self.loggers[log_type].setLevel(logging.DEBUG)
             self.log_streams[log_type] = logging.StreamHandler()
-            self.log_streams[log_type] .setLevel(logging.ERROR)
+            self.log_streams[log_type].setLevel(logging.ERROR)
         for log_type in self.log_types:
             self.tmp_log[log_type] = []
             self.rule_tmp_log[log_type] = ''
@@ -123,7 +125,7 @@ class Auto_Logger():
         if verbose:
             print(self.tmp_log[log_type])
         self.loggers[log_type].debug(' '.join(self.tmp_log[log_type]))
-        self.tmp_log[log_type] .clear()
+        self.tmp_log[log_type].clear()
 
     def define_log_rule(self, log_type, rule):
         """设置日志规则
@@ -132,7 +134,7 @@ class Auto_Logger():
             log_type (str): 日志分类
             rule (str): 日志规则
         """
-        print(log_type +' 日志记录规则: ' + rule)
+        print(log_type + ' 日志记录规则: ' + rule)
         self.rule_tmp_log[log_type] = rule
 
     def rule_log(self, log_type, log, verbose=False):
@@ -184,6 +186,19 @@ class Auto_Logger():
         """
         self.writer_rule[log_type] = rule
 
+    def get_loss_rule(self, loss_name):
+        """ 获取loss为题的正则
+        loss_name: ['a','b']
+        return
+            'a: {:<8.4f}   b: {:<8.4f}'
+
+        """
+        loss_rule = []
+        for loss in loss_name:
+            loss_rule.append(loss + '  {:<8.4f}')
+        loss_rule = '  '.join(loss_rule)
+        return loss_rule
+
     def rule_writer_log(self, log_type, log: list, niter: int):
         """tensorboard规则记录
 
@@ -192,7 +207,7 @@ class Auto_Logger():
             log (list): 日志内容
             niter (int): 计数器
         """
-      
+
         assert len(log) == len(self.writer_rule[log_type])
         for idx, item in enumerate(self.writer_rule[log_type]):
             self.writer.add_scalar(tag='{}/{}'.format(log_type, item),
@@ -204,7 +219,6 @@ class Auto_Logger():
         """关闭
         """
         self.writer.close()
-
 
 # myLogger = Auto_Logger('res', ['train', 'test', 'valid'], True)
 # a = OrderedDict()

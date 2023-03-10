@@ -178,7 +178,7 @@ class Diffusion():
 
         return sample_x_pos
 
-    def sample_from_model(self, generator, n_time, x_init, T, nz):
+    def sample_from_model(self, generator, n_time, x_init, L):
         """
         扩散样本(干净)生成
         """
@@ -188,7 +188,7 @@ class Diffusion():
                 t = torch.full((x.size(0),), i, dtype=torch.int64).to(x.device)
                 t_time = t
                 latent_z = torch.randn(x.size(0), self.diff_opts['nz'], device=x.device)
-                x_0 = generator(x, t_time, latent_z)
+                x_0 = generator(x, L, t_time, latent_z)
                 x_new = self.sample_posterior(self.pos_coeff, x_0, x, t)
                 x = x_new.detach()
         return x
