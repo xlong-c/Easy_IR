@@ -16,7 +16,7 @@ from utils.get_parts import get_dataset
 from utils.utils_dist import get_dist_info
 
 
-class Trainer():
+class Trainer(object):
     def __init__(self, opts):
         self.train_opts = opts['train']
         self.data_opts = opts['data']
