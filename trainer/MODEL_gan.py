@@ -2,7 +2,7 @@ import os
 import time
 import torch
 
-from models.MODEL import MODEL
+from trainer.MODEL import MODEL
 from utils.get_parts import get_model, get_loss, get_optimizer, get_schedule
 
 
@@ -41,13 +41,11 @@ class GANMODEL(MODEL):
         }
         torch.save(content, os.path.join(self.save_dir['model_path'], network_label + '.pth'))
 
+
+
     def load_param(self, network_label):
-        if self.save_opts['pretrained'] is not None:
-            pretrain_path = self.save_opts['pretrain_path']
-        elif self.save_opts['resume']:
-            pretrain_path = os.path.join(self.save_dir['model_path'], network_label + '.pth')
-        else:
-            print('[!!] 不加载模型')
+        pretrain_path = self.get_model_pth(network_label)
+        if pretrain_path == False:
             return
         content = torch.load(pretrain_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
         self.netG.load_state_dict(content['netG_state'])

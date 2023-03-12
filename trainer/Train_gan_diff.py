@@ -3,13 +3,12 @@ import time
 import torch
 import numpy as np
 import random
-import torch.nn as nn
 from torch.utils.data.distributed import DistributedSampler
 from collections import OrderedDict
 
 from tqdm import tqdm
 
-from models.MODEL_diffusion_gan import MODEL
+from trainer.MODEL_gan_diffusion import DIFFGANMODEL as MODEL
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset
@@ -83,29 +82,29 @@ class Trainer(object):
         valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path'])
         test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path'])
 
-        self.data_loader['train'] = self.get_dataloader(data_path=train_dataset_path,
-                                                        mode='train',
-                                                        prefetch_generator=self.data_opts['prefetch_generator'],
-                                                        to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                        dataLoader_param=self.data_opts['data_loader_param'])
-        self.data_loader['valid'] = self.get_dataloader(data_path=valid_dataset_path,
-                                                        mode='valid',
-                                                        prefetch_generator=self.data_opts['prefetch_generator'],
-                                                        to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                        dataLoader_param=self.data_opts['data_loader_param'])
+        self.data_loader['train'] = self.build_dataloader(data_path=train_dataset_path,
+                                                          mode='train',
+                                                          prefetch_generator=self.data_opts['prefetch_generator'],
+                                                          to_bad_fn_param=self.data_opts['to_bad_fn_param'],
+                                                          dataLoader_param=self.data_opts['data_loader_param'])
+        self.data_loader['valid'] = self.build_dataloader(data_path=valid_dataset_path,
+                                                          mode='valid',
+                                                          prefetch_generator=self.data_opts['prefetch_generator'],
+                                                          to_bad_fn_param=self.data_opts['to_bad_fn_param'],
+                                                          dataLoader_param=self.data_opts['data_loader_param'])
 
-        self.data_loader['test'] = self.get_dataloader(data_path=test_dataset_path,
-                                                       mode='test',
-                                                       prefetch_generator=self.data_opts['prefetch_generator'],
-                                                       to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                       dataLoader_param=self.data_opts['data_loader_param'])
+        self.data_loader['test'] = self.build_dataloader(data_path=test_dataset_path,
+                                                         mode='test',
+                                                         prefetch_generator=self.data_opts['prefetch_generator'],
+                                                         to_bad_fn_param=self.data_opts['to_bad_fn_param'],
+                                                         dataLoader_param=self.data_opts['data_loader_param'])
         self.set_len = OrderedDict()
         self.set_len['train'] = len(self.data_loader['train'])
         self.set_len['valid'] = len(self.data_loader['valid'])
         self.set_len['test'] = len(self.data_loader['test'])
         self.load_logger()
 
-    def get_dataloader(self, data_path, mode, prefetch_generator, to_bad_fn_param, dataLoader_param):
+    def build_dataloader(self, data_path, mode, prefetch_generator, to_bad_fn_param, dataLoader_param):
         dataset = get_dataset(data_path, mode, to_bad_fn_param)
         DataLoaderX = use_prefetch_generator(prefetch_generator,
                                              self.data_opts['data_loader_param']['pin_memory'])

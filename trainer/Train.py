@@ -3,13 +3,12 @@ import time
 import torch
 import numpy as np
 import random
-import torch.nn as nn
 from torch.utils.data.distributed import DistributedSampler
 from collections import OrderedDict
 
 from tqdm import tqdm
 
-from models.MODEL import MODEL
+from trainer.MODEL import MODEL
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset

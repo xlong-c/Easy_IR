@@ -139,7 +139,7 @@ class Diffusion():
            生成t t+1 数据
            """
         noise = torch.randn_like(x_start)
-        x_t = self.q_sample(self.coeff, x_start, t)
+        x_t = self.q_sample(x_start=x_start, t=t)
         x_t_plus_one = extract(self.coeff.a_s, t + 1, x_start.shape) * x_t + \
                        extract(self.coeff.sigmas, t + 1, x_start.shape) * noise
 

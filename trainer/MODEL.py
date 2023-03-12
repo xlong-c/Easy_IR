@@ -100,13 +100,21 @@ class MODEL(nn.Module):
         }
         torch.save(content, os.path.join(self.save_dir['model_path'], network_label + '.pth'))
 
-    def load_param(self, network_label):
-        if self.save_opts['pretrained'] is not None:
-            pretrain_path = self.save_opts['pretrain_path']
-        elif self.save_opts['resume']:
-            pretrain_path = os.path.join(self.save_dir['model_path'], network_label + '.pth')
-        else:
+    def get_model_pth(self, network_label):
+        if not self.save_opts['resume']:
             print('[!!] 不加载模型')
+            return False
+        pretrain_path = os.path.join(self.save_dir['model_path'], network_label + '.pth')
+        if self.save_opts['pretrain_path'] is not None:
+            pretrain_path = self.save_opts['pretrain_path']
+        if not os.path.exists(pretrain_path):
+            print('[!!] 模型文件不存在,不加载模型')
+            return False
+        return pretrain_path
+
+    def load_param(self, network_label):
+        pretrain_path = self.get_model_pth(network_label)
+        if pretrain_path == False:
             return
         content = torch.load(pretrain_path,
                              map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
@@ -132,7 +140,6 @@ class MODEL(nn.Module):
         self.L, self.H = sample_batch
         self.L = self.L.to(self.device)
         self.H = self.H.to(self.device)
-
 
     def test_forward(self):
         self.netG.eval()

@@ -1,8 +1,8 @@
 import torch
 
-from models.MODEL_gan import GANMODEL
+from trainer.MODEL_gan import GANMODEL
 from utils.diffusion2 import Diffusion
-from utils.tools import mk_dirs, grad_penalty_call
+from utils.tools import grad_penalty_call
 import torch.nn.functional as F
 
 

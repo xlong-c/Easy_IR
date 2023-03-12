@@ -9,11 +9,11 @@ from data.to_bad_mothond import mri_mask
 from utils.data_aug import Augmentation
 import utils.Loss_Metric as LossMetric
 
-def get_model(model_name, model_args=None):
-    return nn.Sequential(
-        nn.Conv2d(1, 1, 1, 1, 0), nn.ReLU(), nn.Conv2d(1, 1, 1, 1, 0)
 
-    )
+def get_model(model_name, model_args=None):
+    model = importlib.import_module('models', model_name)
+    net = eval('model.get_net(model_args)')
+    return net
 
 
 def get_loss_(loss):
@@ -37,7 +37,6 @@ def get_loss(loss_name: list, loss_weight, is_Metric=False):
         else:
             losses.append(get_loss_(loss))
             print(f'[OK] 损失函数{loss} 启用')
-
 
     return {'loss': losses, 'loss_weight': loss_weight, 'lose_name': loss_name}
 
