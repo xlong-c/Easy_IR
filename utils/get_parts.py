@@ -10,9 +10,12 @@ from utils.data_aug import Augmentation
 import utils.Loss_Metric as LossMetric
 
 
-def get_model(model_name, model_args=None):
-    model = importlib.import_module('models', model_name)
-    net = eval('model.get_net(model_args)')
+def get_model(model_name, model_dir, model_args=None):
+    """
+    获取模型网络实例
+    """
+    network = importlib.import_module('.'.join([model_dir, model_name]))
+    net = eval('network.get_net(model_args)')
     return net
 
 

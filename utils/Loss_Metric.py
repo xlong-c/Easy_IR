@@ -187,3 +187,4 @@ class DisDwtLoss_2(nn.Module):
         l1s = self.hh_lose(dwt1_ll, dwt2_ll)
         l2s = self.ll_lose(dwt1_hl, dwt2_hl) + self.ll_lose(dwt1_lh, dwt2_lh) + self.ll_lose(dwt1_hh, dwt2_hh)
         return (l1s + l2s).mean()
+

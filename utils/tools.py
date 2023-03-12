@@ -31,6 +31,9 @@ def use_prefetch_generator(on_prefetch_generator, pin_memory):
 
 
 def grad_penalty_call(r1_gamma, D_real, x_t):
+    """
+    用一种梯度惩罚的方法替换 clip weights
+    """
     grad_real = torch.autograd.grad(
         outputs=D_real.sum(), inputs=x_t, create_graph=True
     )[0]

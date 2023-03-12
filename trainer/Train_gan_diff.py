@@ -179,6 +179,8 @@ class Trainer(object):
             step_time = time.time()
             self.model.feed_data(train_data)
             self.model.train_forward(self.global_step)
+            if self.train_opts['lr_update_per_step']:
+                self.model.optimizer_step()
             log = self.model.get_log_dict()
             log_msg = [epoch,
                        idx,
@@ -194,8 +196,11 @@ class Trainer(object):
                 idx + last_niter
             )
             loop.set_description(f'Epoch [{epoch}/{self.train_opts["num_epoch"]}]')
-            loop.set_postfix(loss=float(log['G_loss']))
+            loop.set_postfix(loss=float(log['loss_total']))
             self.global_step = self.global_step + 1
+
+        if not self.train_opts['lr_update_per_step']:
+            self.model.optimizer_step()
 
     def test_stage(self):
         loop = tqdm(enumerate(self.data_loader['test']),

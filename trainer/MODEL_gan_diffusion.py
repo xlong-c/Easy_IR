@@ -1,7 +1,7 @@
 import torch
 
 from trainer.MODEL_gan import GANMODEL
-from utils.diffusion2 import Diffusion
+from utils.diffusion import Diffusion
 from utils.tools import grad_penalty_call
 import torch.nn.functional as F
 
@@ -77,9 +77,9 @@ class DIFFGANMODEL(GANMODEL):
 
         errG.backward()
         self.optimizerG.step()
-
         self.log_dict['loss_detail'] = [errG.item(), errD.item()]
         self.log_dict['loss_total'] = errG.item() + errD.item()
+        self.log_dict['G_lr'] = self.schedulerG.get_last_lr()[0]
 
     def test_forward(self):
         self.netG.eval()

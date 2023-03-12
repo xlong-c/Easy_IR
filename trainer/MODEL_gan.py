@@ -12,7 +12,9 @@ class GANMODEL(MODEL):
 
     def load(self):
         super(GANMODEL, self).load()
-        self.netD = get_model(self.D_opts['network'], self.D_opts['net_param'])
+        self.netD = get_model(model_name=self.D_opts['network'],
+                              model_dir=self.D_opts['network_dir'],
+                              model_args=self.D_opts['net_param'])
         self.model_to_device(self.netD)
         self.lossesD = get_loss(self.D_opts['Loss_fn']['loss'], self.D_opts['Loss_fn']['weight'])
         self.optimizerD = get_optimizer(optim_name=self.D_opts['optimizer']['name'],
@@ -40,8 +42,6 @@ class GANMODEL(MODEL):
             'global_step': global_step
         }
         torch.save(content, os.path.join(self.save_dir['model_path'], network_label + '.pth'))
-
-
 
     def load_param(self, network_label):
         pretrain_path = self.get_model_pth(network_label)
@@ -87,3 +87,7 @@ class GANMODEL(MODEL):
 
         if self.train_opts['E_decay'] > 0:
             self.update_E(self.train_opts['E_decay'])
+
+    def optimizer_step(self):
+        super(GANMODEL, self).optimizer_step()
+        self.optimizerD.step()

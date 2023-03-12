@@ -16,8 +16,10 @@ train:
     - PSNR
     - NMSE
 
+
   G_net:
-    network: model.hfs
+    network_dir: models.model
+    network: hfs
     net_param:
       in_dim: 0
       out_dim: 0
@@ -42,7 +44,8 @@ train:
         last_epoch: -1
 
   D_net:
-    network: model.hfs
+    network_dir: models.model
+    network: DISnet
     net_param:
       in_dim: 0
       out_dim: 0
@@ -71,6 +74,10 @@ diffusion:
   use_geometric: True
   beta_min: 0.02
   beta_max: 0.08
+  lazy_reg_step: 15
+  r1_gamma: 0.02
+  nz: 100
+  rec_loss: True
 
 
 
