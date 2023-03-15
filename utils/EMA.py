@@ -12,15 +12,18 @@ import warnings
 
 import torch
 from torch.optim import Optimizer
-import  torch.optim.adam
+import torch.optim.adam
+
 
 class EMA(Optimizer):
+    """ This class implements Exponential Moving Average (EMA) for parameters of a model. It is used to"""
+
     def __init__(self, opt, ema_decay):
-        self.ema_decay = ema_decay
-        self.apply_ema = self.ema_decay > 0.
-        self.optimizer = opt
-        self.state = opt.state
-        self.param_groups = opt.param_groups
+        self.ema_decay = ema_decay  # decay rate of the EMA
+        self.apply_ema = self.ema_decay > 0.  # whether to apply EMA
+        self.optimizer = opt  # the optimizer to which EMA is applied
+        self.state = opt.state  # the state of the optimizer
+        self.param_groups = opt.param_groups    # the parameter groups of the optimizer
 
     def step(self, *args, **kwargs):
         retval = self.optimizer.step(*args, **kwargs)
@@ -50,7 +53,8 @@ class EMA(Optimizer):
             for i in params:
                 params[i]['data'] = torch.stack(params[i]['data'], dim=0)
                 ema[i] = torch.stack(ema[i], dim=0)
-                ema[i].mul_(self.ema_decay).add_(params[i]['data'], alpha=1. - self.ema_decay)
+                ema[i].mul_(self.ema_decay).add_(
+                    params[i]['data'], alpha=1. - self.ema_decay)
 
             for p in group['params']:
                 if p.grad is None:
@@ -74,7 +78,8 @@ class EMA(Optimizer):
 
         # stop here if we are not applying EMA
         if not self.apply_ema:
-            warnings.warn('swap_parameters_with_ema was called when there is no EMA weights.')
+            warnings.warn(
+                'swap_parameters_with_ema was called when there is no EMA weights.')
             return
 
         for group in self.optimizer.param_groups:

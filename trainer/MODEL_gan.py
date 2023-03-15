@@ -6,12 +6,12 @@ from trainer.MODEL import MODEL
 from utils.get_parts import get_model, get_loss, get_optimizer, get_schedule
 
 
-class GANMODEL(MODEL):
+class GANMODEL(MODEL): # 继承MODEL类
     def __init__(self, opts):
         super(GANMODEL, self).__init__(opts)
 
     def load(self):
-        super(GANMODEL, self).load()
+        super(GANMODEL, self).load() # 调用父类的load方法
         self.netD = get_model(model_name=self.D_opts['network'],
                               model_dir=self.D_opts['network_dir'],
                               model_args=self.D_opts['net_param'])

@@ -1,2 +1,5 @@
 result/
 models/model/
+*/__pycache__
+.idea/
+.vscode/

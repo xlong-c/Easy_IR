@@ -81,6 +81,7 @@ class MODEL(nn.Module):
         """
         Get bare model, especially under wrapping with
         DistributedDataParallel or DataParallel.
+        翻译：获取裸模型，特别是在包装下
         """
         if isinstance(network, (DataParallel, DistributedDataParallel)):
             network = network.module
@@ -89,6 +90,7 @@ class MODEL(nn.Module):
     def get_network_state(self, network):
         """
         获取网络权重并迁移至cpu
+        转英语：Get network weights and migrate to cpu
         """
         state_dict = network.state_dict()
         for key, param in state_dict.items():
@@ -117,7 +119,7 @@ class MODEL(nn.Module):
         """
         加载模型节点
         """
-        if not self.save_opts['resume']:
+        if not self.save_opts['resume']: # 不加载模型
             print('[!!] 不加载模型')
             return False
         pretrain_path = os.path.join(self.save_dir['model_path'], network_label + '.pth')
