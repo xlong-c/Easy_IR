@@ -16,7 +16,6 @@ train:
     - PSNR
     - NMSE
 
-
   G_net:
     network_dir: models.model
     network: hfs

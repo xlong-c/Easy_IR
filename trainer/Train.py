@@ -17,19 +17,24 @@ from utils.utils_dist import get_dist_info
 
 class Trainer(object):
     def __init__(self, opts):
-        self.train_opts = opts['train']
-        self.data_opts = opts['data']
-        self.save_opts = opts['save']
-        self.seed = opts['train']['seed']
-        self.rank, self.world_size = get_dist_info()
-        self.set_seed()
-        self.model = MODEL(opts)
-        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'],opts['train']['version']),
+        """_summary_
+
+        Args:
+            opts (dict): 配置文件
+        """
+        self.train_opts = opts['train'] # 训练配置
+        self.data_opts = opts['data'] # 数据配置
+        self.save_opts = opts['save'] # 保存配置
+        self.seed = opts['train']['seed'] # 随机种子
+        self.rank, self.world_size = get_dist_info() # 分布式信息
+        self.set_seed() # 设置随机种子
+        self.model = MODEL(opts) # 模型
+        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'],opts['train']['version']), 
                                   log_types=['train', 'valid', 'test'],
-                                  On_tensorboard=opts['save']['On_tensorboard'])
-        self.data_loader = OrderedDict()
-        self.trainer_log_dict = OrderedDict()
-        self.load()
+                                  On_tensorboard=opts['save']['On_tensorboard']) # 日志
+        self.data_loader = OrderedDict() # 数据加载器
+        self.trainer_log_dict = OrderedDict() # 训练日志
+        self.load() 
 
     def set_seed(self):
         random.seed(self.seed)
@@ -72,16 +77,16 @@ class Trainer(object):
             test_rule
         )
 
-        self.logger.define_writer_rule('train', rule=self.train_opts['G_net']['Loss_fn']['loss'])
+        self.logger.define_writer_rule('train', rule=self.train_opts['G_net']['Loss_fn']['loss']) # 训练日志
         self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
         self.logger.define_writer_rule('test', rule=self.train_opts['Metric'])
 
     def load(self):
-        self.model.load_param(self.save_opts['resume_lable'])
+        self.model.load_param(self.save_opts['resume_lable']) # 加载模型参数
 
-        train_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['trainset_path'])
-        valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path'])
-        test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path'])
+        train_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['trainset_path']) # 训练集路径
+        valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path']) # 验证集路径
+        test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path']) # 测试集路径
 
         self.data_loader['train'] = self.get_dataloader(data_path=train_dataset_path,
                                                         mode='train',

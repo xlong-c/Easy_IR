@@ -216,9 +216,12 @@ class Auto_Logger():
                                    )
 
     def close(self):
-        """关闭
+        """
+        关闭
         """
         self.writer.close()
+
+
 
 # myLogger = Auto_Logger('res', ['train', 'test', 'valid'], True)
 # a = OrderedDict()
