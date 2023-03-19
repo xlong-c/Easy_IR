@@ -59,6 +59,8 @@ class MODEL(nn.Module):
         if self.train_opts['E_decay'] > 0:
             self.optimizerG = EMA(self.optimizerG, self.train_opts['E_decay'])
 
+        self.scaler = torch.cuda.amp.GradScaler() if self.train_opts['amp'] else None
+
     def define_save_dir(self):
         """ 检查或者创建保存目录
         --save_dir
@@ -119,7 +121,7 @@ class MODEL(nn.Module):
         """
         加载模型节点
         """
-        if not self.save_opts['resume']: # 不加载模型
+        if not self.save_opts['resume']:  # 不加载模型
             print('[!!] 不加载模型')
             return False
         pretrain_path = os.path.join(self.save_dir['model_path'], network_label + '.pth')
@@ -196,20 +198,25 @@ class MODEL(nn.Module):
             loss_total += ll
         return loss_total, loss_detail
 
-    def train_forward(self, global_step):
+    def train_forward(self, global_step) :
         """
         网络训练
         """
         self.P = self.netG(self.L)
 
         G_loss, G_loss_detail = self.lossfn(self.lossesG, self.P, self.H)
-        G_loss.backward()
+        if self.scaler is not None:
+            self.scaler.scale(G_loss).backward()
+            self.scaler.step(self.optimizerG)
+            self.scaler.update()
+        else:
+            G_loss.backward()
+            self.optimizerG.step()
 
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
+            torch.nn.utils.clip_grad_norm_(self.netG.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
                                            norm_type=2)
-        self.optimizerG.step()
 
         self.log_dict['G_loss'] = G_loss.item()
         self.log_dict['G_loss_detail'] = G_loss_detail

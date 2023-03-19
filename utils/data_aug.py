@@ -6,6 +6,7 @@ from scipy.ndimage.filters import gaussian_filter
 import scipy.ndimage as ndi
 from skimage import exposure
 
+
 def flip_axis(x, axis, is_random=False):
     """Flip the axis of an image, such as flip left and right, up and down, randomly or non-randomly,
 
@@ -189,6 +190,7 @@ def apply_transform(x, transform_matrix, channel_index=2, fill_mode='nearest', c
     x = np.rollaxis(x, 0, channel_index + 1)
     return x
 
+
 # shift
 def shift(x, wrg=0.1, hrg=0.1, is_random=False, row_index=0, col_index=1, channel_index=2,
           fill_mode='nearest', cval=0., order=1):
@@ -230,6 +232,7 @@ def shift(x, wrg=0.1, hrg=0.1, is_random=False, row_index=0, col_index=1, channe
     transform_matrix = translation_matrix  # no need to do offset
     x = apply_transform(x, transform_matrix, channel_index, fill_mode, cval, order)
     return x
+
 
 def zoom(x, zoom_range=(0.9, 1.1), is_random=False, row_index=0, col_index=1, channel_index=2,
          fill_mode='nearest', cval=0., order=1):
@@ -278,6 +281,7 @@ def zoom(x, zoom_range=(0.9, 1.1), is_random=False, row_index=0, col_index=1, ch
     transform_matrix = transform_matrix_offset_center(zoom_matrix, h, w)
     x = apply_transform(x, transform_matrix, channel_index, fill_mode, cval, order)
     return x
+
 
 # brightness
 def brightness(x, gamma=1, gain=1, is_random=False):
@@ -333,3 +337,16 @@ class Augmentation(object):
                        is_random=True)  # Change the brightness of a single image, randomly or non-randomly.
         x = x * 2 - 1  # 映射至-1~1
         return x
+
+
+def get_data_transforms():
+    import torchvision.transforms as T
+    return T.Compose(
+        [
+            T.RandomHorizontalFlip(p=0.5),
+            T.RandomVerticalFlip(p=0.5),
+            T.RandomRotation(degrees=(-10.10), resample=False, expand=False),
+            T.ColorJitter(brightness=0.2, contrast=0.2),
+            T.ToTensor()
+        ]
+    )
