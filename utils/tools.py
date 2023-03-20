@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from prefetch_generator import BackgroundGenerator
+from timm.models.layers import trunc_normal_
 
 
 def mk_dirs(path, verbose=True):
@@ -73,6 +74,8 @@ def init_network(net, init_type='normal', init_gain=0.02):
                     m.weight.data, a=0, mode='fan_in')
             elif init_type == 'orthogonal':
                 torch.nn.init.orthogonal_(m.weight.data, gain=init_gain)
+            elif init_type == 'trunc_normal':
+                trunc_normal_(m.weight.data, std=0.02)
             else:
                 raise NotImplementedError(
                     '[ERROR] Initialization method [%s] is not implemented' % init_type
@@ -85,7 +88,7 @@ def init_network(net, init_type='normal', init_gain=0.02):
         elif classname.find('LayerNorm') != -1 or classname.find('GroupNorm') != -1:
             torch.nn.init.normal_(m.weight.data, 1.0, init_gain)
             torch.nn.init.constant_(m.bias.data, 0.0)
-    print('[INFO] 初始化网络权重')
+    print('[OK] 初始化网络权重')
     net.apply(init_func)
 
 

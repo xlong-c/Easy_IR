@@ -14,12 +14,13 @@ class DIFFGANMODEL(GANMODEL):
     def load(self):
         super(DIFFGANMODEL, self).load()
         self.diffusion = Diffusion(self.opts)
+
     def feed_data(self, sample_batch):
-        L,H,mask =  sample_batch
-        super().feed_data((L,H))
+        L, H, mask = sample_batch
+        super().feed_data((L, H))
         self.mask = mask
-        
-    def train_forward(self, global_step):
+
+    def train_forward(self):
         # 先让D走
         for p in self.netD.parameters():
             p.requires_grad = True
@@ -40,11 +41,12 @@ class DIFFGANMODEL(GANMODEL):
         if self.diff_opts['lazy_reg_step'] is None:
             grad_penalty_call(self.diff_opts['r1_gamma'], D_real, x_t)
         else:
-            if global_step % self.diff_opts['lazy_reg_step'] == 0:
+            if self.global_step % self.diff_opts['lazy_reg_step'] == 0:
                 grad_penalty_call(self.diff_opts['r1_gamma'], D_real, x_t)
 
         # train with fake
-        latent_z = torch.randn(self.H.shape[0], self.diff_opts['nz'], device=self.device)
+        latent_z = torch.randn(
+            self.H.shape[0], self.diff_opts['nz'], device=self.device)
         x_0_predict = self.netG(x_tp1.detach(), self.L, t, latent_z)
         x_pos_sample = self.diffusion.sample_posterior(x_0_predict, x_tp1, t)
 
@@ -67,7 +69,8 @@ class DIFFGANMODEL(GANMODEL):
         t = self.diffusion.get_T((self.H.shape[0],))
         x_t, x_tp1 = self.diffusion.q_sample_pairs(self.H, t)
 
-        latent_z = torch.randn(self.H.shape[0], self.diff_opts['nz'], device=self.device)
+        latent_z = torch.randn(
+            self.H.shape[0], self.diff_opts['nz'], device=self.device)
 
         x_0_predict = self.netG(x_tp1.detach(), self.L, t, latent_z)
         x_pos_sample = self.diffusion.sample_posterior(x_0_predict, x_tp1, t)

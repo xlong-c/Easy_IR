@@ -78,7 +78,7 @@ class Trainer(object):
             'test',
             test_rule
         )
-
+ 
         self.logger.define_writer_rule(
             'train', rule=self.train_opts['G_net']['Loss_fn']['loss'])  # 训练日志
         self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
@@ -189,7 +189,8 @@ class Trainer(object):
         for idx, train_data in loop:
             step_time = time.time()
             self.model.feed_data(train_data)
-            self.model.optim_parameters()
+            self.model.train_forward()
+            self.model.global_step_pp() # global_step += 1
             log = self.model.get_log_dict()
             log_msg = [epoch,
                        idx,

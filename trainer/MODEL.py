@@ -20,7 +20,7 @@ class MODEL(nn.Module):
         self.D_opts = opts['train']['D_net']  # D网络设置
         self.save_opts = opts['save']  # 保存设置
         self.start_epoch = 1  # 开始的epoch
-        self.global_step = -1  # 全局步数
+        self.global_step = 1  # 全局步数
         self.device = torch.device('cuda' if self.train_opts['gpu_ids'] is not None else 'cpu')  # 运行设备
         self.load()
 
@@ -197,7 +197,10 @@ class MODEL(nn.Module):
             loss_total += ll
         return loss_total, loss_detail
 
-    def train_forward(self, global_step) :
+    def global_step_pp(self):
+        self.global_step = self.global_step +1
+    
+    def train_forward(self) :
         """
         网络训练
         """

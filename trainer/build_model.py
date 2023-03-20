@@ -12,7 +12,9 @@ def build_model(opts):
         """
         from trainer.MODEL_gan_diffusion import DIFFGANMODEL
         model = DIFFGANMODEL(opts) 
-    else:
+    elif opts['model_type'] == 'Base':
         from trainer.MODEL import MODEL
         model = MODEL(opts)
+    else:
+        raise Exception('')
     return model
