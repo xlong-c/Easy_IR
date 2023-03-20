@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
-from trainer.MODEL import MODEL
+from trainer.build_model import build_model
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset
@@ -27,7 +27,7 @@ class Trainer(object):
         self.seed = opts['train']['seed']  # 随机种子
         self.rank, self.world_size = get_dist_info()  # 分布式信息
         self.set_seed()  # 设置随机种子
-        self.model = MODEL(opts)  # 模型
+        self.model = build_model(opts)  # 模型
         self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'], opts['train']['version']),
                                   log_types=['train', 'valid', 'test'],
                                   On_tensorboard=opts['save']['On_tensorboard'])  # 日志

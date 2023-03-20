@@ -1,5 +1,5 @@
 def build_model(opts):
-    
+
     if opts['model_type'] == 'GAN':
         from trainer.MODEL_gan import GANMODEL
         model = GANMODEL(opts)
@@ -9,3 +9,4 @@ def build_model(opts):
     else:
         from trainer.MODEL import MODEL
         model = MODEL(opts)
+    return model
