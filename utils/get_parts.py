@@ -8,14 +8,16 @@ from data.dataset_mri import Brain_data
 from data.to_bad_mothond import mri_mask
 from utils.data_aug import Augmentation
 import utils.Loss_Metric as LossMetric
+from utils.tools import init_network
 
 
-def get_model(model_name, model_dir, model_args=None):
+def get_model(model_name, model_dir, model_init='kaiming', model_args=None):
     """
     获取模型网络实例
     """
     network = importlib.import_module('.'.join([model_dir, model_name]))
     net = eval('network.get_net(model_args)')
+    init_network(net, model_init)
     return net
 
 
@@ -56,7 +58,8 @@ def get_optimizer(optim_name, network, optim_param):
 
 
 def get_schedule(scheduler_name, optimizer, schedule_param):
-    scheduler = eval(f'lr_scheduler.{scheduler_name}')(optimizer, **schedule_param)
+    scheduler = eval(f'lr_scheduler.{scheduler_name}')(
+        optimizer, **schedule_param)
     return scheduler
 
 
@@ -75,5 +78,6 @@ def get_datapath(path, mode, train_path, val_path, test_path):
 def get_dataset(data_path, mode, to_bad_fn_param):
     to_bad = mri_mask(**to_bad_fn_param)
     transform = [Augmentation]
-    dataset = Brain_data(data_path, mode=mode, to_bad_fn=to_bad, transform=transform)
+    dataset = Brain_data(data_path, mode=mode,
+                         to_bad_fn=to_bad, transform=transform)
     return dataset

@@ -45,7 +45,7 @@ class MODEL(nn.Module):
         self.log_dict = OrderedDict()
         self.define_save_dir()
 
-        self.netG = get_model(self.G_opts['network'], self.G_opts['network_dir'], self.G_opts['net_param'])
+        self.netG = get_model(self.G_opts['network'], self.G_opts['network_dir'], self.G_opts['net_init'], self.G_opts['net_param'])
         self.model_to_device(self.netG)
         self.lossesG = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
 
