@@ -73,13 +73,11 @@ class GANMODEL(MODEL): # 继承MODEL类
         self.forward_G()
         G_loss, G_loss_detail = self.lossfn(self.lossesG, self.P, self.H)
         G_loss.backward()
-
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
             torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
                                            norm_type=2)
         self.optimizerG.step()
-
         self.log_dict['G_loss'] = G_loss.item()
         self.log_dict['G_loss_detail'] = G_loss_detail
         self.log_dict['G_lr'] = self.schedulerG.get_last_lr()[0]

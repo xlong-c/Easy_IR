@@ -85,7 +85,6 @@ class Trainer(object):
 
     def load(self):
         self.model.load_param(self.save_opts['resume_lable'])  # 加载模型参数
-
         train_dataset_path = os.path.join(
             self.data_opts['data_path'], self.data_opts['trainset_path'])  # 训练集路径
         valid_dataset_path = os.path.join(

@@ -24,7 +24,6 @@ class Trainer_gan_diff(Trainer):
 
     def load_logger(self):
         time_rule = 'tooks: {:.2f}S'
-
         # G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         # loss_rule = self.logger.get_loss_rule(G_loss)
         loss_rule = 'errG: {:<8.4f}  errD: {:<8.4f}'
