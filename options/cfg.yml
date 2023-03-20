@@ -1,6 +1,6 @@
 model_type: Base
 trainer: trainer
-gan_type: None
+gan_type: null
 
 train:
   #  定义网络与网络参数
@@ -10,7 +10,7 @@ train:
   gpu_ids: [0] # 使用的GPU
   ncols: 80 # 进度条长度
   E_decay: 0 # EMA的衰减率
-  num_epoch: 1 # 训练的epoch数
+  num_epoch: 2 # 训练的epoch数
   dist: False # 是否使用分布式训练
   amp: False # 是否使用混合精度训练
 
@@ -21,6 +21,7 @@ train:
   Metric: # 评价指标
     - PSNR
     - NMSE
+    - SSIM
 
   G_net: # 生成器网络
     network_dir: models.network1
@@ -41,15 +42,14 @@ train:
     optimizer:
       name: Adam
       param:
-        lr: 0.001
+        lr: 0.0001
         weight_decay: 0
     optimizer_clipgrad: False
     lr_scheduler: # 学习率调整策略
-      name: MultiStepLR
+      name: StepLR
       param:
-        milestones: [100, 2000, 3000]
-        gamma: 0.1
-        last_epoch: -1
+        step_size: 5
+        gamma: 0.5
 
   D_net: #  判别器网络
     network_dir: models.model
@@ -115,4 +115,4 @@ save:
   epoch: 1
   best: True
   net_load_strict: True
-  pretrain_path: None
+  pretrain_path: null

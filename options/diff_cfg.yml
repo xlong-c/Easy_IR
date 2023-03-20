@@ -41,15 +41,14 @@ train:
     optimizer:
       name: Adam
       param:
-        lr: 0.001
+        lr: 0.00001
         weight_decay: 0
     optimizer_clipgrad: False
     lr_scheduler: # 学习率调整策略
-      name: MultiStepLR
+      name: StepLR
       param:
-        milestones: [20, 30]
+        step_size: 1
         gamma: 0.5
-        last_epoch: -1
 
   D_net: #  判别器网络
     network_dir: models.model

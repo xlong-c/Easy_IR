@@ -6,18 +6,19 @@ from trainer.MODEL import MODEL
 from utils.get_parts import get_model, get_loss, get_optimizer, get_schedule
 
 
-class GANMODEL(MODEL): # 继承MODEL类
+class GANMODEL(MODEL):  # 继承MODEL类
     def __init__(self, opts):
         super(GANMODEL, self).__init__(opts)
 
     def load(self):
-        super(GANMODEL, self).load() # 调用父类的load方法
+        super(GANMODEL, self).load()  # 调用父类的load方法
         self.netD = get_model(model_name=self.D_opts['network'],
                               model_dir=self.D_opts['network_dir'],
                               model_init=self.D_opts['net_init'],
                               model_args=self.D_opts['net_param'])
         self.model_to_device(self.netD)
-        self.lossesD = get_loss(self.D_opts['Loss_fn']['loss'], self.D_opts['Loss_fn']['weight'])
+        self.lossesD = get_loss(
+            self.D_opts['Loss_fn']['loss'], self.D_opts['Loss_fn']['weight'])
         self.optimizerD = get_optimizer(optim_name=self.D_opts['optimizer']['name'],
                                         network=self.netD,
                                         optim_param=self.D_opts['optimizer']['param'])
@@ -42,13 +43,15 @@ class GANMODEL(MODEL): # 继承MODEL类
             'epoch': epoch + 1,
             'global_step': global_step
         }
-        torch.save(content, os.path.join(self.save_dir['model_path'], network_label + '.pth'))
+        torch.save(content, os.path.join(
+            self.save_dir['model_path'], network_label + '.pth'))
 
     def load_param(self, network_label):
         pretrain_path = self.get_model_pth(network_label)
         if pretrain_path == False:
             return
-        content = torch.load(pretrain_path, map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
+        content = torch.load(pretrain_path, map_location=lambda storage,
+                             loc: storage.cuda(torch.cuda.current_device()))
         self.netG.load_state_dict(content['netG_state'])
         self.netD.load_state_dict(content['netD_state'])
         self.optimizerG.load_state_dict(content['optimizerG'])
@@ -65,6 +68,10 @@ class GANMODEL(MODEL): # 继承MODEL类
         self.P = self.netG(self.L)
         _, Metric_detail = self.lossfn(self.Metric, self.P, self.H)
         self.log_dict['Metric_detail'] = Metric_detail
+
+    def scheduler_step(self):
+        super().scheduler_step() # G更新一次
+        self.schedulerD.step() #D更新一次
 
     def train_forward(self, global_step):
         self.P = self.netG(self.L)

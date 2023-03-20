@@ -72,8 +72,8 @@ class MODEL(nn.Module):
         exp_version = self.train_opts['version']  # 实验版本
         self.save_dir = OrderedDict()
         self.save_dir['save_dir'] = self.save_opts['dir']
-        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], exp_version, 'checkpoint')
-        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'], exp_version)
+        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], 'checkpoint',exp_version)
+        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'],'log', exp_version)
         mk_dirs(self.save_dir['save_dir'])
         mk_dirs(self.save_dir['model_path'])
 
@@ -199,7 +199,9 @@ class MODEL(nn.Module):
 
     def global_step_pp(self):
         self.global_step = self.global_step +1
-
+        
+    def scheduler_step(self):
+        self.schedulerG.step()
     
     def train_forward(self) :
         """
@@ -215,9 +217,8 @@ class MODEL(nn.Module):
         else:
             G_loss.backward()
             self.optimizerG.step()
-        if not self.train_opts['lr_update_per_step']:
-            self.schedulerG.step()  # 按步数来更行学习率
-            print(self.schedulerG.get_lr()[0])
+        if self.train_opts['lr_update_per_step']:
+            self.scheduler_step() # 按步数来更行学习率
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
             torch.nn.utils.clip_grad_norm_(self.netG.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],

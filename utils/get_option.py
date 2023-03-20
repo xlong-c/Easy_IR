@@ -10,7 +10,7 @@ def get_options(path):
 
 def save_options(opts):
     print('[OK] 配置文件已保存')
-    with open(os.path.join(opts['save']['dir'],opts['train']['version'], 'cfg.yml'), 'w') as ff:
+    with open(os.path.join(opts['save']['dir'],'log',opts['train']['version'], 'cfg.yml'), 'w') as ff:
         yaml.dump(opts, ff)
         ff.close()
 

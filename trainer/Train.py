@@ -28,7 +28,7 @@ class Trainer(object):
         self.rank, self.world_size = get_dist_info()  # 分布式信息
         self.set_seed()  # 设置随机种子
         self.model = build_model(opts)  # 模型
-        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'], opts['train']['version']),
+        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'], 'log', opts['train']['version']),
                                   log_types=['train', 'valid', 'test'],
                                   On_tensorboard=opts['save']['On_tensorboard'])  # 日志
         self.data_loader = OrderedDict()  # 数据加载器
@@ -52,7 +52,7 @@ class Trainer(object):
         epoch_num = '{:>3}'.format(self.train_opts['num_epoch'])
         train_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + \
-            loss_rule + time_rule + '  lr: {:<8.4f}'
+                     loss_rule + time_rule + '  lr: {:<.10f}'
 
         self.logger.define_log_rule(
             'train',
@@ -67,7 +67,7 @@ class Trainer(object):
 
         valid_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} VAL_MODE ' + metric_rule + \
-            time_rule + '  lr: {:<8.4f}'
+                     time_rule + '  lr: {:<8.4f}'
         self.logger.define_log_rule(
             'valid',
             valid_rule
@@ -144,11 +144,14 @@ class Trainer(object):
             last_niter = epoch * self.set_len['train']
             self.train_a_epoch(epoch, last_niter)
             temp_acc = self.val_a_epoch(epoch)
-            print('EPOCH {} {}'.format(epoch, temp_acc))
+            acc = ' '.join(["{}: {:.8f}".format(m, a) for m, a in zip(self.train_opts['Metric'], temp_acc)])
+            print('EPOCH {} {}'.format(epoch, acc))
             if temp_acc[0] > best:
                 print('the BEST is NEW')
                 self.model.save('', is_best=True, epoch=epoch)
                 best = temp_acc[0]
+            if not self.train_opts['lr_update_per_step']:
+                self.model.scheduler_step()  # 按照epoch更新学习率
         self.model.save('last', is_best=False, epoch=-1)
 
     def val_a_epoch(self, epoch):
@@ -193,7 +196,7 @@ class Trainer(object):
             self.model.global_step_pp()  # global_step += 1
             log = self.model.get_log_dict()
             log_msg = [epoch,
-                       idx+1,
+                       idx + 1,
                        log['G_loss'],
                        *log['G_loss_detail'],
                        time.time() - step_time,
