@@ -7,17 +7,25 @@ from prefetch_generator import BackgroundGenerator
 
 
 def mk_dirs(path, verbose=True):
+    """
+    创建目录
+    """
+    # 如果路径不存在，则创建目录
     if not os.path.exists(path):
         if verbose:
             print("[OK] creates %s ..." % path)
         os.makedirs(path)
         return False
     else:
+        # 如果路径已存在，则打印警告信息
         if verbose:
             print("[!!] %s exists ..." % path)
 
 
 def use_prefetch_generator(on_prefetch_generator, pin_memory):
+    """
+    使用预取生成器加速数据加载
+    """
     if on_prefetch_generator:
         assert pin_memory, '未开启内存锁页！！'
 
@@ -29,6 +37,7 @@ def use_prefetch_generator(on_prefetch_generator, pin_memory):
     else:
         DataLoaderX = DataLoader
     return DataLoaderX
+
 
 
 def grad_penalty_call(r1_gamma, D_real, x_t):
@@ -82,7 +91,6 @@ def init_network(net, init_type='normal', init_gain=0.02):
 
 def reverse_matrix(matrix):
     """01矩阵取反
-
     Args:
         matrix (_type_): _description_
 
@@ -93,6 +101,10 @@ def reverse_matrix(matrix):
 
 
 def add_mask(matrix, mask):
+    """
+    将mask应用于矩阵
+    """
+    mask = torch.tensor(mask, dtype=torch.float32)
     matrix = torch.fft.fft2(matrix)
     matrix = torch.fft.fftshift(matrix)
     matrix = matrix * mask

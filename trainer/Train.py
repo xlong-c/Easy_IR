@@ -18,7 +18,6 @@ from utils.utils_dist import get_dist_info
 class Trainer(object):
     def __init__(self, opts):
         """_summary_
-
         Args:
             opts (dict): 配置文件
         """

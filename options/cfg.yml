@@ -17,8 +17,8 @@ train:
     - NMSE
 
   G_net: # 生成器网络
-    network_dir: models.model
-    network: hfs
+    network_dir: models.network1
+    network: testnet
     net_init: kaiming
     net_param:
       in_dim: 0
