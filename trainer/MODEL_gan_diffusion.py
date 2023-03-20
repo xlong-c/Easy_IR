@@ -14,7 +14,11 @@ class DIFFGANMODEL(GANMODEL):
     def load(self):
         super(DIFFGANMODEL, self).load()
         self.diffusion = Diffusion(self.opts)
-
+    def feed_data(self, sample_batch):
+        L,H,mask =  sample_batch
+        super().feed_data((L,H))
+        self.mask = mask
+        
     def train_forward(self, global_step):
         # 先让D走
         for p in self.netD.parameters():
