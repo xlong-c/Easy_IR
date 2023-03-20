@@ -14,6 +14,7 @@ class GANMODEL(MODEL): # 继承MODEL类
         super(GANMODEL, self).load() # 调用父类的load方法
         self.netD = get_model(model_name=self.D_opts['network'],
                               model_dir=self.D_opts['network_dir'],
+                              model_init=self.D_opts['net_init'],
                               model_args=self.D_opts['net_param'])
         self.model_to_device(self.netD)
         self.lossesD = get_loss(self.D_opts['Loss_fn']['loss'], self.D_opts['Loss_fn']['weight'])

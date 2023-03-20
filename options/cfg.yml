@@ -2,24 +2,24 @@ train:
   #  定义网络与网络参数
   seed: 42
   gan_type:
-  lr_update_per_step: False
-  version: "001"
-  gpu_ids: [0]
-  ncols: 80
-  E_decay: 0
-  num_epoch: 1
-  dist: False
-  find_unused_parameters: False 
+  lr_update_per_step: False # 是否按照训练步数更新网络权重，若为否则按照epoch更新
+  version: "001" # 版本号
+  gpu_ids: [0] # 使用的GPU
+  ncols: 80 # 进度条长度
+  E_decay: 0 # EMA的衰减率
+  num_epoch: 1 # 训练的epoch数
+  dist: False # 是否使用分布式训练
+  find_unused_parameters: False # 是否查找未使用的参数
   _set_static_graph: False # 使用静态图
 
-
-
-  Metric:
+  Metric: # 评价指标
     - PSNR
     - NMSE
 
-  G_net:
-    network: resnet
+  G_net: # 生成器网络
+    network_dir: models.model
+    network: hfs
+    net_init: kaiming
     net_param:
       in_dim: 0
       out_dim: 0
@@ -36,6 +36,33 @@ train:
         lr: 0.001
         weight_decay: 0
     optimizer_clipgrad: False
+    lr_scheduler: # 学习率调整策略
+      name: MultiStepLR
+      param:
+        milestones: [100, 2000, 3000]
+        gamma: 0.1
+        last_epoch: -1
+
+  D_net: #  判别器网络
+    network_dir: models.model
+    network: DISnet
+    net_init: kaiming
+    net_param:
+      in_dim: 0
+      out_dim: 0
+    Loss_fn:
+      loss:
+        - L1loss
+        - MSELoss
+      weight:
+        - 1
+        - 1
+    optimizer:
+      name: Adam
+      param:
+        lr: 0.001
+        weight_decay: 0
+
     lr_scheduler:
       name: MultiStepLR
       param:
@@ -43,25 +70,15 @@ train:
         gamma: 0.1
         last_epoch: -1
 
-  D_net:
-    network: N
-    net_param:
-      in_dim: 0
-      out_dim: 0
-    Loss_fn:
-      - name: L1loss
-        weight: 1
-      - name: L2loss
-        weight: 1
-    optimizer: AdamW
-    lr: 0.001
-
-    lr_scheduler:
-      - name: MultiStepLR
-      - param:
-          milestones: 5
-          gamma: 0.1
-          last_epoch: -1
+diffusion:
+  num_timesteps: 4
+  use_geometric: True
+  beta_min: 0.02
+  beta_max: 0.08
+  lazy_reg_step: 15
+  r1_gamma: 0.02
+  nz: 100
+  rec_loss: True
 
 data:
   prefetch_generator: True
@@ -90,10 +107,4 @@ save:
   epoch: 1
   best: True
   net_load_strict: True
-  pretrained: False
-  pretrain_path:
-    G_orthers_path: None
-    D_orthers_path: None
-    G_net_path: None
-    D_net_path: None
-    E_net_path: None
+  pretrain_path: None

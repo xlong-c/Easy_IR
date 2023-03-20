@@ -22,28 +22,28 @@ class Trainer(object):
         Args:
             opts (dict): 配置文件
         """
-        self.train_opts = opts['train'] # 训练配置
-        self.data_opts = opts['data'] # 数据配置
-        self.save_opts = opts['save'] # 保存配置
-        self.seed = opts['train']['seed'] # 随机种子
-        self.rank, self.world_size = get_dist_info() # 分布式信息
-        self.set_seed() # 设置随机种子
-        self.model = MODEL(opts) # 模型
-        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'],opts['train']['version']), 
+        self.train_opts = opts['train']  # 训练配置
+        self.data_opts = opts['data']  # 数据配置
+        self.save_opts = opts['save']  # 保存配置
+        self.seed = opts['train']['seed']  # 随机种子
+        self.rank, self.world_size = get_dist_info()  # 分布式信息
+        self.set_seed()  # 设置随机种子
+        self.model = MODEL(opts)  # 模型
+        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'], opts['train']['version']),
                                   log_types=['train', 'valid', 'test'],
-                                  On_tensorboard=opts['save']['On_tensorboard']) # 日志
-        self.data_loader = OrderedDict() # 数据加载器
-        self.trainer_log_dict = OrderedDict() # 训练日志
-        self.load() 
+                                  On_tensorboard=opts['save']['On_tensorboard'])  # 日志
+        self.data_loader = OrderedDict()  # 数据加载器
+        self.trainer_log_dict = OrderedDict()  # 训练日志
+        self.load()
 
-    def set_seed(self):
+    def set_seed(self):  # 设置随机种子
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed_all(self.seed)
 
-    def load_logger(self):
-        time_rule = 'tooks: {:.2f}S'
+    def load_logger(self):  # 加载日志
+        time_rule = 'tooks: {:.2f}S' 
         G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         loss_rule = []
         for loss in G_loss:
@@ -51,7 +51,8 @@ class Trainer(object):
         loss_rule = '  '.join(loss_rule)
         epoch_num = '{:>3}'.format(self.train_opts['num_epoch'])
         train_rule = 'EPOCH: ' + epoch_num + \
-                     '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + loss_rule + time_rule + '  lr: {:<8.4f}'
+                     '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + \
+            loss_rule + time_rule + '  lr: {:<8.4f}'
         # epoch idx t_loss losses time lr
         metrices = self.train_opts['Metric']
         metric_rule = []
@@ -60,7 +61,8 @@ class Trainer(object):
         metric_rule = '  '.join(metric_rule)
 
         valid_rule = 'EPOCH: ' + epoch_num + \
-                     '/{:>3} VAL_MODE ' + metric_rule + time_rule + '  lr: {:<8.4f}'
+                     '/{:>3} VAL_MODE ' + metric_rule + \
+            time_rule + '  lr: {:<8.4f}'
         # epoch metric time lr
         test_rule = 'TEST_MODE ' + metric_rule + time_rule
         # metric time
@@ -77,16 +79,20 @@ class Trainer(object):
             test_rule
         )
 
-        self.logger.define_writer_rule('train', rule=self.train_opts['G_net']['Loss_fn']['loss']) # 训练日志
+        self.logger.define_writer_rule(
+            'train', rule=self.train_opts['G_net']['Loss_fn']['loss'])  # 训练日志
         self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
         self.logger.define_writer_rule('test', rule=self.train_opts['Metric'])
 
     def load(self):
-        self.model.load_param(self.save_opts['resume_lable']) # 加载模型参数
+        self.model.load_param(self.save_opts['resume_lable'])  # 加载模型参数
 
-        train_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['trainset_path']) # 训练集路径
-        valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path']) # 验证集路径
-        test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path']) # 测试集路径
+        train_dataset_path = os.path.join(
+            self.data_opts['data_path'], self.data_opts['trainset_path'])  # 训练集路径
+        valid_dataset_path = os.path.join(
+            self.data_opts['data_path'], self.data_opts['validset_path'])  # 验证集路径
+        test_dataset_path = os.path.join(
+            self.data_opts['data_path'], self.data_opts['testset_path'])  # 测试集路径
 
         self.data_loader['train'] = self.get_dataloader(data_path=train_dataset_path,
                                                         mode='train',
@@ -161,7 +167,8 @@ class Trainer(object):
             loop.set_description('VALIDING')
             loop.set_postfix(Metric=Metric_detail[0])
 
-        Metric_detail_avg = np.sum(np.array(Metric_detail_avg), axis=0) / self.set_len['valid']
+        Metric_detail_avg = np.sum(
+            np.array(Metric_detail_avg), axis=0) / self.set_len['valid']
         log_msg = [epoch,
                    *Metric_detail_avg,
                    time.time() - val_time,
@@ -198,7 +205,8 @@ class Trainer(object):
                 log['G_loss_detail'],
                 idx + last_niter
             )
-            loop.set_description(f'Epoch [{epoch}/{self.train_opts["num_epoch"]}]')
+            loop.set_description(
+                f'Epoch [{epoch}/{self.train_opts["num_epoch"]}]')
             loop.set_postfix(loss=float(log['G_loss']))
 
     def test_stage(self):
@@ -231,7 +239,8 @@ class Trainer(object):
             )
         self.logger.log('test', 'THE LAST RESULT')
 
-        Metric_detail_avg = np.sum(np.array(Metric_detail_avg), axis=0) / self.set_len['test']
+        Metric_detail_avg = np.sum(
+            np.array(Metric_detail_avg), axis=0) / self.set_len['test']
         log_msg = [
             *Metric_detail_avg,
             time.time() - test_time,

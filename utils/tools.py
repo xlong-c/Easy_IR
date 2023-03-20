@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -38,7 +39,7 @@ def grad_penalty_call(r1_gamma, D_real, x_t):
         outputs=D_real.sum(), inputs=x_t, create_graph=True
     )[0]
     grad_penalty = (
-            grad_real.view(grad_real.size(0), -1).norm(2, dim=1) ** 2
+        grad_real.view(grad_real.size(0), -1).norm(2, dim=1) ** 2
     ).mean()
 
     grad_penalty = r1_gamma / 2 * grad_penalty
@@ -59,7 +60,8 @@ def init_network(net, init_type='normal', init_gain=0.02):
             elif init_type == 'xavier':
                 torch.nn.init.xavier_normal_(m.weight.data, gain=init_gain)
             elif init_type == 'kaiming':
-                torch.nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+                torch.nn.init.kaiming_normal_(
+                    m.weight.data, a=0, mode='fan_in')
             elif init_type == 'orthogonal':
                 torch.nn.init.orthogonal_(m.weight.data, gain=init_gain)
             else:
@@ -77,3 +79,14 @@ def init_network(net, init_type='normal', init_gain=0.02):
     print('[INFO] 初始化网络权重')
     net.apply(init_func)
 
+
+def reverse_matrix(matrix):
+    """01矩阵取反
+
+    Args:
+        matrix (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    return np.abs(matrix - 1)
