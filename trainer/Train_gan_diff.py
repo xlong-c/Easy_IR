@@ -24,16 +24,13 @@ class Trainer_gan_diff(Trainer):
 
     def load_logger(self):
         super(Trainer_gan_diff, self).load_logger()
+        # 重构训练日志规则
         time_rule = 'tooks: {:.2f}S'
-        # G_loss = self.train_opts['G_net']['Loss_fn']['loss']
-        # loss_rule = self.logger.get_loss_rule(G_loss)
         loss_rule = 'errG: {:<8.4f}  errD: {:<8.4f}'
         epoch_num = '{:>3}'.format(self.train_opts['num_epoch'])
         train_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + loss_rule + time_rule + '  lr: {:<8.4f}'
-        # epoch idx t_loss losses time lr
-
-        # metric time
+                     
         self.logger.define_log_rule(
             'train',
             train_rule
