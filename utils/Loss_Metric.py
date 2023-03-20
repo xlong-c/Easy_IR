@@ -14,9 +14,13 @@ from math import exp
 
 from torch.nn import L1Loss
 
-
+# NMSE损失函数
 class NMSE(nn.Module):
     """
+    计算预测值和目标值之间的均方误差
+    通过对均方误差进行归一化，计算标准化的均方误差
+    返回标准化的均方误差
+    该函数的输入为gen和target，输出为tensor [batch]
     Normalized Mean Squared Error (NMSE) loss function.
     """
     def __init__(self):
