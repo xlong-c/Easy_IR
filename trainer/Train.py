@@ -42,6 +42,7 @@ class Trainer(object):
         torch.cuda.manual_seed_all(self.seed)
 
     def load_logger(self):  # 加载日志
+        # train log rule
         time_rule = 'tooks: {:.2f}S' 
         G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         loss_rule = []
@@ -52,7 +53,12 @@ class Trainer(object):
         train_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + \
             loss_rule + time_rule + '  lr: {:<8.4f}'
-        # epoch idx t_loss losses time lr
+            
+        self.logger.define_log_rule(
+            'train',
+            train_rule
+        )
+        # val log rule
         metrices = self.train_opts['Metric']
         metric_rule = []
         for metric in metrices:
@@ -62,17 +68,12 @@ class Trainer(object):
         valid_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} VAL_MODE ' + metric_rule + \
             time_rule + '  lr: {:<8.4f}'
-        # epoch metric time lr
-        test_rule = 'TEST_MODE ' + metric_rule + time_rule
-        # metric time
-        self.logger.define_log_rule(
-            'train',
-            train_rule
-        )
         self.logger.define_log_rule(
             'valid',
             valid_rule
         )
+        # test log rule
+        test_rule = 'TEST_MODE ' + metric_rule + time_rule
         self.logger.define_log_rule(
             'test',
             test_rule

@@ -23,6 +23,7 @@ class Trainer_gan_diff(Trainer):
 
 
     def load_logger(self):
+        super(Trainer_gan_diff, self).load_logger()
         time_rule = 'tooks: {:.2f}S'
         # G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         # loss_rule = self.logger.get_loss_rule(G_loss)
@@ -31,33 +32,14 @@ class Trainer_gan_diff(Trainer):
         train_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + loss_rule + time_rule + '  lr: {:<8.4f}'
         # epoch idx t_loss losses time lr
-        metrices = self.train_opts['Metric']
-        metric_rule = []
-        for metric in metrices:
-            metric_rule.append(metric + '  {:<8.4f}')
-        metric_rule = '  '.join(metric_rule)
 
-        valid_rule = 'EPOCH: ' + epoch_num + \
-                     '/{:>3} VAL_MODE ' + metric_rule + time_rule + '  lr: {:<8.4f}'
-        # epoch metric time lr
-        test_rule = 'TEST_MODE ' + metric_rule + time_rule
         # metric time
         self.logger.define_log_rule(
             'train',
             train_rule
         )
-        self.logger.define_log_rule(
-            'valid',
-            valid_rule
-        )
-        self.logger.define_log_rule(
-            'test',
-            test_rule
-        )
 
-        self.logger.define_writer_rule('train', rule=self.train_opts['G_net']['Loss_fn']['loss'])
-        self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
-        self.logger.define_writer_rule('test', rule=self.train_opts['Metric'])
+        self.logger.define_writer_rule('train', rule=['errG','errD'])
 
   
 
