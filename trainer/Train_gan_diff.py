@@ -9,33 +9,18 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 from trainer.MODEL_gan_diffusion import DIFFGANMODEL as MODEL
+from trainer.Train import Trainer
+from trainer.build_model import build_model
 from utils.Logger import Auto_Logger
 from utils.tools import use_prefetch_generator
 from utils.get_parts import get_dataset
 from utils.utils_dist import get_dist_info
 
 
-class Trainer(object):
+class Trainer_gan_diff(Trainer):
     def __init__(self, opts):
-        self.train_opts = opts['train']
-        self.data_opts = opts['data']
-        self.save_opts = opts['save']
-        self.seed = opts['train']['seed']
-        self.rank, self.world_size = get_dist_info()
-        self.set_seed()
-        self.model = MODEL(opts)
-        self.logger = Auto_Logger(path=os.path.join(opts['save']['dir'], opts['train']['version']),
-                                  log_types=['train', 'valid', 'test'],
-                                  On_tensorboard=opts['save']['On_tensorboard'])
-        self.data_loader = OrderedDict()
-        self.trainer_log_dict = OrderedDict()
-        self.load()
+       super(Trainer_gan_diff, self).__init__(opts)
 
-    def set_seed(self):
-        random.seed(self.seed)
-        np.random.seed(self.seed)
-        torch.manual_seed(self.seed)
-        torch.cuda.manual_seed_all(self.seed)
 
     def load_logger(self):
         time_rule = 'tooks: {:.2f}S'
@@ -75,166 +60,6 @@ class Trainer(object):
         self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
         self.logger.define_writer_rule('test', rule=self.train_opts['Metric'])
 
-    def load(self):
-        self.model.load_param(self.save_opts['resume_lable'])
-        self.global_step = self.model.global_step
-        train_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['trainset_path'])
-        valid_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['validset_path'])
-        test_dataset_path = os.path.join(self.data_opts['data_path'], self.data_opts['testset_path'])
+  
 
-        self.data_loader['train'] = self.build_dataloader(data_path=train_dataset_path,
-                                                          mode='train',
-                                                          prefetch_generator=self.data_opts['prefetch_generator'],
-                                                          to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                          dataLoader_param=self.data_opts['data_loader_param'])
-        self.data_loader['valid'] = self.build_dataloader(data_path=valid_dataset_path,
-                                                          mode='valid',
-                                                          prefetch_generator=self.data_opts['prefetch_generator'],
-                                                          to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                          dataLoader_param=self.data_opts['data_loader_param'])
-
-        self.data_loader['test'] = self.build_dataloader(data_path=test_dataset_path,
-                                                         mode='test',
-                                                         prefetch_generator=self.data_opts['prefetch_generator'],
-                                                         to_bad_fn_param=self.data_opts['to_bad_fn_param'],
-                                                         dataLoader_param=self.data_opts['data_loader_param'])
-        self.set_len = OrderedDict()
-        self.set_len['train'] = len(self.data_loader['train'])
-        self.set_len['valid'] = len(self.data_loader['valid'])
-        self.set_len['test'] = len(self.data_loader['test'])
-        self.load_logger()
-
-    def build_dataloader(self, data_path, mode, prefetch_generator, to_bad_fn_param, dataLoader_param):
-        dataset = get_dataset(data_path, mode, to_bad_fn_param)
-        DataLoaderX = use_prefetch_generator(prefetch_generator,
-                                             self.data_opts['data_loader_param']['pin_memory'])
-        if mode != 'train':
-            dataLoader_param['shuffle'] = False
-
-        if self.train_opts['dist'] and mode == 'train':
-            self.train_sampler = DistributedSampler(dataset,
-                                                    shuffle=self.data_opts['shuffle'],
-                                                    drop_last=self.data_opts['shuffle'],
-                                                    seed=self.seed)
-            dataLoader_param['shuffle'] = False
-            loader = DataLoaderX(dataset,
-                                 **dataLoader_param,
-                                 sampler=self.train_sampler)
-        else:
-            loader = DataLoaderX(dataset,
-                                 **dataLoader_param)
-        return loader
-
-    def train_stage(self):
-        best = -1e10
-        for epoch in range(self.model.start_epoch, self.train_opts['num_epoch'] + 1):
-            if self.train_opts['dist']:
-                self.train_sampler.set_epoch(epoch)
-            last_niter = epoch * self.set_len['train']
-            self.train_a_epoch(epoch, last_niter)
-            temp_acc = self.val_a_epoch(epoch)
-            print('EPOCH {} {}'.format(epoch, temp_acc))
-            if temp_acc[0] > best:
-                print('the BEST is NEW')
-                self.model.save('', is_best=True, epoch=epoch)
-                best = temp_acc[0]
-        self.model.save('last', is_best=False, epoch=-1)
-
-    def val_a_epoch(self, epoch):
-        loop = tqdm(enumerate(self.data_loader['test']),
-                    total=self.set_len['test'],
-                    ncols=self.train_opts['ncols'])
-        val_time = time.time()
-        Metric_detail_avg = []
-        for idx, val_data in loop:
-            self.model.feed_data(val_data)
-            self.model.test_forward()
-            log = self.model.get_log_dict()
-            Metric_detail = log['Metric_detail']
-            Metric_detail_avg.append(Metric_detail)
-            loop.set_description('VALIDING')
-            loop.set_postfix(Metric=Metric_detail[0])
-
-        Metric_detail_avg = np.sum(np.array(Metric_detail_avg), axis=0) / self.set_len['valid']
-        log_msg = [epoch,
-                   *Metric_detail_avg,
-                   time.time() - val_time,
-                   self.model.get_log_dict()['G_lr']
-                   ]  # epoch metric time lr
-        self.logger.rule_log('valid', log_msg)
-        self.logger.rule_writer_log(
-            'valid',
-            Metric_detail_avg,
-            epoch
-        )
-        return Metric_detail_avg
-
-    def train_a_epoch(self, epoch, last_niter):
-        loop = tqdm(enumerate(self.data_loader['train']),
-                    total=self.set_len['train'],
-                    ncols=self.train_opts['ncols'])
-        self.model.train()
-
-        for idx, train_data in loop:
-            step_time = time.time()
-            self.model.feed_data(train_data)
-            self.model.train_forward(self.global_step)
-            if self.train_opts['lr_update_per_step']:
-                self.model.optimizer_step()
-            log = self.model.get_log_dict()
-            log_msg = [epoch,
-                       idx,
-                       log['loss_total'],
-                       *log['loss_detail'],
-                       time.time() - step_time,
-                       log['G_lr']
-                       ]  # epoch idx t_loss losses time lr
-            self.logger.rule_log('train', log_msg)
-            self.logger.rule_writer_log(
-                'train',
-                log['loss_detail'],
-                idx + last_niter
-            )
-            loop.set_description(f'Epoch [{epoch}/{self.train_opts["num_epoch"]}]')
-            loop.set_postfix(loss=float(log['loss_total']))
-            self.global_step = self.global_step + 1
-
-        if not self.train_opts['lr_update_per_step']:
-            self.model.optimizer_step()
-
-    def test_stage(self):
-        loop = tqdm(enumerate(self.data_loader['test']),
-                    total=self.set_len['test'],
-                    ncols=self.train_opts['ncols'])
-        test_time = time.time()
-        Metric_detail_avg = []
-        for idx, val_data in loop:
-            step_time = time.time()
-            self.model.feed_data(val_data)
-            self.model.test_forward()
-            log = self.model.get_log_dict()
-            Metric_detail = log['Metric_detail']
-            Metric_detail_avg.append(Metric_detail)
-            loop.set_description('TESTING')
-            loop.set_postfix(Metric=Metric_detail[0])
-
-            log_msg = [
-                *Metric_detail,
-                time.time() - step_time,
-            ]  # metric time
-
-            self.logger.rule_log('test', log_msg)
-
-            self.logger.rule_writer_log(
-                'test',
-                Metric_detail,
-                idx
-            )
-        self.logger.log('test', 'THE LAST RESULT')
-
-        Metric_detail_avg = np.sum(np.array(Metric_detail_avg), axis=0) / self.set_len['test']
-        log_msg = [
-            *Metric_detail_avg,
-            time.time() - test_time,
-        ]  # metric time
-        self.logger.rule_log('test', log_msg)
+   
