@@ -1,6 +1,7 @@
 # Modified from https://github.com/open-mmlab/mmcv/blob/master/mmcv/runner/dist_utils.py  # noqa: E501
 import functools
 import os
+import pickle
 import subprocess
 import torch
 import torch.distributed as dist

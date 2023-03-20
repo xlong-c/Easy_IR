@@ -199,6 +199,7 @@ class MODEL(nn.Module):
 
     def global_step_pp(self):
         self.global_step = self.global_step +1
+
     
     def train_forward(self) :
         """
@@ -214,7 +215,9 @@ class MODEL(nn.Module):
         else:
             G_loss.backward()
             self.optimizerG.step()
-
+        if not self.train_opts['lr_update_per_step']:
+            self.schedulerG.step()  # 按步数来更行学习率
+            print(self.schedulerG.get_lr()[0])
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
             torch.nn.utils.clip_grad_norm_(self.netG.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
@@ -223,8 +226,7 @@ class MODEL(nn.Module):
         self.log_dict['G_loss'] = G_loss.item()
         self.log_dict['G_loss_detail'] = G_loss_detail
         self.log_dict['G_lr'] = self.schedulerG.get_last_lr()[0]
-        if not self.train_opts['lr_update_per_step']:
-            self.schedulerG.step()  # 按步数来更行学习率
+        
 
         if self.train_opts['E_decay'] > 0:
             self.update_E(self.train_opts['E_decay'])

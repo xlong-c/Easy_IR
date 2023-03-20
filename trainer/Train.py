@@ -43,7 +43,7 @@ class Trainer(object):
 
     def load_logger(self):  # 加载日志
         # train log rule
-        time_rule = 'tooks: {:.2f}S' 
+        time_rule = 'tooks: {:.2f}S'
         G_loss = self.train_opts['G_net']['Loss_fn']['loss']
         loss_rule = []
         for loss in G_loss:
@@ -53,7 +53,7 @@ class Trainer(object):
         train_rule = 'EPOCH: ' + epoch_num + \
                      '/{:>3} step: {:<8} LOSS: {:<8.4f} ' + \
             loss_rule + time_rule + '  lr: {:<8.4f}'
-            
+
         self.logger.define_log_rule(
             'train',
             train_rule
@@ -78,7 +78,7 @@ class Trainer(object):
             'test',
             test_rule
         )
- 
+
         self.logger.define_writer_rule(
             'train', rule=self.train_opts['G_net']['Loss_fn']['loss'])  # 训练日志
         self.logger.define_writer_rule('valid', rule=self.train_opts['Metric'])
@@ -190,10 +190,10 @@ class Trainer(object):
             step_time = time.time()
             self.model.feed_data(train_data)
             self.model.train_forward()
-            self.model.global_step_pp() # global_step += 1
+            self.model.global_step_pp()  # global_step += 1
             log = self.model.get_log_dict()
             log_msg = [epoch,
-                       idx,
+                       idx+1,
                        log['G_loss'],
                        *log['G_loss_detail'],
                        time.time() - step_time,

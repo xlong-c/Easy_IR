@@ -25,7 +25,9 @@ train:
   G_net: # 生成器网络
     network_dir: models.network1
     network: testnet
-    net_init: trunc_normal
+    net_init: 
+      conv: normal
+      linear: trunc_normal
     net_param:
       in_dim: 1
       out_dim: 1
