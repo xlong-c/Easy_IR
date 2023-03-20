@@ -1,5 +1,4 @@
 def build_model(opts):
-
     if opts['model_type'] == 'GAN':
         """
         This is the model for gan
