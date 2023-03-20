@@ -16,6 +16,9 @@ from torch.nn import L1Loss
 
 
 class NMSE(nn.Module):
+    """
+    Normalized Mean Squared Error (NMSE) loss function.
+    """
     def __init__(self):
         super().__init__()
 

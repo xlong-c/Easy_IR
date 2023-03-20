@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from utils.tools import add_mask
+
 
 def extract(input, t, shape):
     """
@@ -156,7 +158,7 @@ class Diffusion():
               extract(self.coeff.sigmas_cum, t, x_start.shape) * noise
         return x_t
 
-    def q_sample_pairs(self, x_start, t):
+    def q_sample_pairs(self, x_start, t,mask = None):
         """
            Generate a pair of disturbed images for training
            :param x_start: x_0
@@ -165,6 +167,8 @@ class Diffusion():
            生成t t+1 数据
            """
         noise = torch.randn_like(x_start)
+        if mask is not None:
+            noise = add_mask(noise, mask)
         x_t = self.q_sample(x_start=x_start, t=t)
         x_t_plus_one = extract(self.coeff.a_s, t + 1, x_start.shape) * x_t + \
                        extract(self.coeff.sigmas, t + 1, x_start.shape) * noise

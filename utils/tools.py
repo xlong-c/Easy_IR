@@ -90,3 +90,13 @@ def reverse_matrix(matrix):
         _type_: _description_
     """
     return np.abs(matrix - 1)
+
+
+def add_mask(matrix, mask):
+    matrix = torch.fft.fft2(matrix)
+    matrix = torch.fft.fftshift(matrix)
+    matrix = matrix * mask
+    matrix = torch.fft.ifftshift(matrix)
+    matrix = torch.fft.ifft2(matrix)
+    matrix = torch.abs(matrix)
+    return matrix
