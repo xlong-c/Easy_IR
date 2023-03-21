@@ -115,7 +115,7 @@ def reverse_matrix(matrix):
     Returns:
         _type_: _description_
     """
-    return np.abs(matrix - 1)
+    return torch.abs(matrix.to(torch.float32) - 1).unsqueeze(0)
 
 
 def add_mask(matrix, mask):

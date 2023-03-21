@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
+
+from data.build_dataset import build_dataset
 from data.dataset_mri import Brain_data
 from data.to_bad_mothond import mri_mask
 from utils.data_aug import Augmentation
@@ -58,7 +60,7 @@ def get_optimizer(optim_name, network, optim_param):
 
 
 def get_schedule(scheduler_name, optimizer, schedule_param):
-    print('  '.join(('[OK] 优化器学习率调整策略启用','衰减率：{}'.format(schedule_param.get("gamma")))))
+    print('  '.join(('[OK] 优化器学习率调整策略启用', '衰减率：{}'.format(schedule_param.get("gamma")))))
     scheduler = eval(f'lr_scheduler.{scheduler_name}')(
         optimizer, **schedule_param)
     return scheduler
@@ -76,10 +78,9 @@ def get_datapath(path, mode, train_path, val_path, test_path):
     return data_path
 
 
-def get_dataset(data_path, mode, to_bad_fn_param):
+def get_dataset(dataset_name,data_path, mode, to_bad_fn_param):
     to_bad = mri_mask(**to_bad_fn_param)
     transform = [Augmentation]
-    dataset = Brain_data(data_path, mode=mode,
-                         to_bad_fn=to_bad, transform=transform)
+    dataset = build_dataset(dataset_name,data_path, mode=mode,
+                            to_bad_fn=to_bad, transform=transform)
     return dataset
-

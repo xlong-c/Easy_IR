@@ -47,7 +47,9 @@ class Brain_data(Dataset):
                 H = f()(H)
         H = ToTensor()(H).reshape(1, 256, 256)
         L = self.to_bad_fn.tobad(H)
-        return L, H
+        return L, H, self.to_bad_fn.mask
+
+
 
 
 if __name__ == '__main__':

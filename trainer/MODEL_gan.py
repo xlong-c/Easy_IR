@@ -73,7 +73,7 @@ class GANMODEL(MODEL):  # 继承MODEL类
         super().scheduler_step() # G更新一次
         self.schedulerD.step() #D更新一次
 
-    def train_forward(self, global_step):
+    def train_forward(self):
         self.P = self.netG(self.L)
 
         self.optimizerG.zero_grad()

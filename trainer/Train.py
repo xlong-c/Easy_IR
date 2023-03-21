@@ -116,7 +116,7 @@ class Trainer(object):
         self.load_logger()
 
     def get_dataloader(self, data_path, mode, prefetch_generator, to_bad_fn_param, dataLoader_param):
-        dataset = get_dataset(data_path, mode, to_bad_fn_param)
+        dataset = get_dataset(self.train_opts['dataset_name'],data_path, mode, to_bad_fn_param)
         DataLoaderX = use_prefetch_generator(prefetch_generator,
                                              self.data_opts['data_loader_param']['pin_memory'])
         if mode != 'train':
@@ -197,20 +197,20 @@ class Trainer(object):
             log = self.model.get_log_dict()
             log_msg = [epoch,
                        idx + 1,
-                       log['G_loss'],
-                       *log['G_loss_detail'],
+                       log['loss_total'],
+                       *log['loss_detail'],
                        time.time() - step_time,
                        log['G_lr']
                        ]  # epoch idx t_loss losses time lr
             self.logger.rule_log('train', log_msg)
             self.logger.rule_writer_log(
                 'train',
-                log['G_loss_detail'],
+                log['loss_detail'],
                 idx + last_niter
             )
             loop.set_description(
                 f'Epoch [{epoch}/{self.train_opts["num_epoch"]}]')
-            loop.set_postfix(loss=float(log['G_loss']))
+            loop.set_postfix(loss=float(log['loss_total']))
 
     def test_stage(self):
         loop = tqdm(enumerate(self.data_loader['test']),

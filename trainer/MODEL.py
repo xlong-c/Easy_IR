@@ -37,7 +37,7 @@ class MODEL(nn.Module):
             if use_static_graph:
                 print('Using static graph. Make sure that "unused parameters" will not change during training loop.')
                 network._set_static_graph()
-        else:
+        elif self.device.type == 'cuda':
             network = DataParallel(network)  # 单机
         return network
 

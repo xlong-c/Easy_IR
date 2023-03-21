@@ -69,6 +69,7 @@ class Diffusion_Coefficients():
     """
     获取正向扩散各种系数    (训练)
     """
+
     def __init__(self, num_timesteps, beta_min, beta_max, use_geometric, device):
         self.sigmas, self.a_s, _ = get_sigma_schedule(num_timesteps, beta_min, beta_max, use_geometric, device=device)
         self.a_s_cum = np.cumprod(self.a_s.cpu())
@@ -85,6 +86,7 @@ class Posterior_Coefficients():
     """
     获取反向扩散各种系数    (推理)
     """
+
     def __init__(self, num_timesteps, beta_min, beta_max, use_geometric, device):
         _, _, self.betas = get_sigma_schedule(num_timesteps, beta_min, beta_max, use_geometric, device=device)
 
@@ -143,22 +145,35 @@ class Diffusion():
 
     def get_T(self, size):
         # 生成时刻T
-        return torch.randint(0, self.diff_opts['num_timesteps'],
-                             size, device=self.device)
+        return torch.randint(low=0, high=self.diff_opts['num_timesteps'],
+                             size=size, device=self.device)
 
-    def q_sample(self, x_start, t, *, noise=None):
+    def get_noise(self, xx, mask=None):
+        noise = torch.randn_like(xx, device=xx.device)
+        noise = torch.fft.fft2(noise)
+        noise = torch.fft.fftshift(noise)
+        if mask is not None:
+            noise = noise * mask
+        noise = torch.fft.ifftshift(noise)
+        noise = torch.fft.ifft2(noise)
+        noise = torch.real(noise)
+        import torchvision.utils as vutils
+        vutils.save_image(noise.squeeze(0), 'output.png')
+        return noise
+
+    def q_sample(self, x_start, t, mask, *, noise=None):
         """
         Diffuse the data (t == 0 means diffused for t step)
         生成t时刻的数据
         """
         if noise is None:
-            noise = torch.randn_like(x_start)
+            noise = self.get_noise(x_start, mask)
 
         x_t = extract(self.coeff.a_s_cum, t, x_start.shape) * x_start + \
               extract(self.coeff.sigmas_cum, t, x_start.shape) * noise
         return x_t
 
-    def q_sample_pairs(self, x_start, t,mask = None):
+    def q_sample_pairs(self, x_start, t, mask):
         """
            Generate a pair of disturbed images for training
            :param x_start: x_0
@@ -166,13 +181,10 @@ class Diffusion():
            :return: x_t, x_{t+1}
            生成t t+1 数据
            """
-        noise = torch.randn_like(x_start)
-        if mask is not None:
-            noise = add_mask(noise, mask)
-        x_t = self.q_sample(x_start=x_start, t=t)
+        noise = self.get_noise(x_start, mask=mask)
+        x_t = self.q_sample(x_start=x_start, t=t, mask=mask)
         x_t_plus_one = extract(self.coeff.a_s, t + 1, x_start.shape) * x_t + \
                        extract(self.coeff.sigmas, t + 1, x_start.shape) * noise
-
         return x_t, x_t_plus_one
 
     def q_posterior(self, x_0, x_t, t):
@@ -188,27 +200,27 @@ class Diffusion():
             self.pos_coeff.posterior_log_variance_clipped, t, x_t.shape)
         return mean, var, log_var_clipped
 
-    def p_sample(self, x_0, x_t, t):
+    def p_sample(self, x_0, x_t, t, mask):
         """
        生成T-1的数据
        """
         mean, _, log_var = self.q_posterior(x_0, x_t, t)
 
-        noise = torch.randn_like(x_t)
+        noise = self.get_noise(x_t, mask)
 
         nonzero_mask = (1 - (t == 0).type(torch.float32))
 
         return mean + nonzero_mask[:, None, None, None] * torch.exp(0.5 * log_var) * noise
 
-    def sample_posterior(self, x_0, x_t, t):
+    def sample_posterior(self, x_0, x_t, t, mask):
         """
         生成T-1的数据
         """
-        sample_x_pos = self.p_sample(x_0, x_t, t)
+        sample_x_pos = self.p_sample(x_0, x_t, t, mask)
 
         return sample_x_pos
 
-    def sample_from_model(self, generator, n_time, x_init, L):
+    def sample_from_model(self, generator, n_time, x_init, L, mask):
         """
         扩散样本(干净)生成
         """
@@ -217,8 +229,7 @@ class Diffusion():
             for i in reversed(range(n_time)):
                 t = torch.full((x.size(0),), i, dtype=torch.int64).to(x.device)
                 t_time = t
-                latent_z = torch.randn(x.size(0), self.diff_opts['nz'], device=x.device)
-                x_0 = generator(x, L, t_time, latent_z)
-                x_new = self.sample_posterior(x_0, x, t)
+                x_0, rec_loss_ = generator(x, L, t_time)
+                x_new = self.sample_posterior(x_0, x, t, mask)
                 x = x_new.detach()
         return x
