@@ -8,7 +8,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from data.build_dataset import build_dataset
 from data.dataset_mri import Brain_data
 from data.to_bad_mothond import mri_mask
-from utils.data_aug import Augmentation
+from utils.data_aug import Augmentation, get_data_transforms
 import utils.Loss_Metric as LossMetric
 from utils.tools import init_network
 
@@ -80,7 +80,7 @@ def get_datapath(path, mode, train_path, val_path, test_path):
 
 def get_dataset(dataset_name,data_path, mode, to_bad_fn_param):
     to_bad = mri_mask(**to_bad_fn_param)
-    transform = [Augmentation]
+    transform = get_data_transforms()
     dataset = build_dataset(dataset_name,data_path, mode=mode,
                             to_bad_fn=to_bad, transform=transform)
     return dataset

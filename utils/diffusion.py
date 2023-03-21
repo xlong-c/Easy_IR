@@ -157,8 +157,6 @@ class Diffusion():
         noise = torch.fft.ifftshift(noise)
         noise = torch.fft.ifft2(noise)
         noise = torch.real(noise)
-        import torchvision.utils as vutils
-        vutils.save_image(noise.squeeze(0), 'output.png')
         return noise
 
     def q_sample(self, x_start, t, mask, *, noise=None):

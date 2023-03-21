@@ -345,8 +345,16 @@ def get_data_transforms():
         [
             T.RandomHorizontalFlip(p=0.5),
             T.RandomVerticalFlip(p=0.5),
-            T.RandomRotation(degrees=(-10.10), resample=False, expand=False),
+            T.RandomRotation(degrees=(-10,10), resample=False, expand=False),
             T.ColorJitter(brightness=0.2, contrast=0.2),
             T.ToTensor()
         ]
     )
+if __name__ == "__main__":
+    import numpy as np
+    import torch
+    aa  = np.random.randn(2,256,256)
+    a1 = aa[0].reshape(1,256,256)
+    t = get_data_transforms()
+    print(a1.shape)
+    print(t(a1).shape)
