@@ -350,11 +350,29 @@ def get_data_transforms():
             T.ToTensor()
         ]
     )
+
+def print_max_min(x):
+    print("Max value: ", np.max(x))
+    print("Min value: ", np.min(x))
+
 if __name__ == "__main__":
     import numpy as np
     import torch
     aa  = np.random.randn(2,256,256)
     a1 = aa[0].reshape(1,256,256)
     t = get_data_transforms()
+    out = t(a1)
     print(a1.shape)
-    print(t(a1).shape)
+    print(out.shape)
+    print_max_min(a1)
+    print_max_min(out)
+
+
+# if __name__ == "__main__":
+#     import numpy as np
+#     import torch
+#     aa  = np.random.randn(2,256,256)
+#     a1 = aa[0].reshape(1,256,256)
+#     t = get_data_transforms()
+#     print(a1.shape)
+#     print(t(a1).shape)

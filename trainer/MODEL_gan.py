@@ -39,7 +39,7 @@ class GANMODEL(MODEL):  # 继承MODEL类
             'optimizerD': self.optimizerD.state_dict(),
             'schedulerG': self.schedulerG.state_dict(),
             'schedulerD': self.schedulerD.state_dict(),
-            'save_time': time.time(),
+            'save_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
             'epoch': epoch + 1,
             'global_step': global_step
         }
@@ -61,7 +61,7 @@ class GANMODEL(MODEL):  # 继承MODEL类
         save_time = content['save_time']
         self.start_epoch = content['epoch']
         self.global_step = content['global_step']
-        print('[OK] 自{}保存的模型中加载'.format(save_time))
+        print('[OK] 自{}保存的模型中加载'.format(save_time), ',周期为{}'.format(self.start_epoch))
 
     def test_forward(self):
         self.netG.eval()
@@ -75,7 +75,6 @@ class GANMODEL(MODEL):  # 继承MODEL类
 
     def train_forward(self):
         self.P = self.netG(self.L)
-
         self.optimizerG.zero_grad()
         self.forward_G()
         G_loss, G_loss_detail = self.lossfn(self.lossesG, self.P, self.H)

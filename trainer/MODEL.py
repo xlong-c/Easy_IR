@@ -44,7 +44,8 @@ class MODEL(nn.Module):
     def load(self):
         self.log_dict = OrderedDict()
         self.define_save_dir()
-        self.netG = get_model(self.G_opts['network'], self.G_opts['network_dir'], self.G_opts['net_init'], self.G_opts['net_param'])
+        self.netG = get_model(self.G_opts['network'], self.G_opts['network_dir'], self.G_opts['net_init'],
+                              self.G_opts['net_param'])
         self.model_to_device(self.netG)
         self.lossesG = get_loss(self.G_opts['Loss_fn']['loss'], self.G_opts['Loss_fn']['weight'])
 
@@ -72,8 +73,8 @@ class MODEL(nn.Module):
         exp_version = self.train_opts['version']  # 实验版本
         self.save_dir = OrderedDict()
         self.save_dir['save_dir'] = self.save_opts['dir']
-        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], 'checkpoint',exp_version)
-        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'],'log', exp_version)
+        self.save_dir['model_path'] = os.path.join(self.save_dir['save_dir'], 'checkpoint', exp_version)
+        self.save_dir['log_path'] = os.path.join(self.save_dir['save_dir'], 'log', exp_version)
         mk_dirs(self.save_dir['save_dir'])
         mk_dirs(self.save_dir['model_path'])
 
@@ -110,7 +111,7 @@ class MODEL(nn.Module):
             "netG_state": netG_state,
             'optimizerG': self.optimizerG.state_dict(),
             'schedulerG': self.schedulerG.state_dict(),
-            'save_time': time.time(),
+            'save_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
             'epoch': epoch + 1,
             'global_step': global_step
         }
@@ -146,14 +147,20 @@ class MODEL(nn.Module):
         save_time = content['save_time']
         self.start_epoch = content['epoch']
         self.global_step = content['global_step']
-        print('[OK] 自{}保存的模型中加载'.format(save_time))
+        print('[OK] 自{}保存的模型中加载'.format(save_time),',周期为{}'.format(self.start_epoch))
 
     def save_G_only(self):
         """
         仅保存G网络参数
         """
+        if self.train_opts['E_decay'] > 0:
+            self.optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
+
         netG_state = self.get_network_state(self.netG)
         torch.save(netG_state, os.path.join(self.save_dir['model_path'], 'onlyG.pth'))
+
+        if self.train_opts['E_decay'] > 0:
+            self.optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
 
     def get_res(self):
         """
@@ -198,12 +205,12 @@ class MODEL(nn.Module):
         return loss_total, loss_detail
 
     def global_step_pp(self):
-        self.global_step = self.global_step +1
-        
+        self.global_step = self.global_step + 1
+
     def scheduler_step(self):
         self.schedulerG.step()
-    
-    def train_forward(self) :
+
+    def train_forward(self):
         """
         网络训练
         """
@@ -218,19 +225,15 @@ class MODEL(nn.Module):
             G_loss.backward()
             self.optimizerG.step()
         if self.train_opts['lr_update_per_step']:
-            self.scheduler_step() # 按步数来更行学习率
+            self.scheduler_step()  # 按步数来更行学习率
         G_optimizer_clipgrad = self.G_opts['optimizer_clipgrad'] if self.G_opts['optimizer_clipgrad'] else 0
         if G_optimizer_clipgrad > 0:
             torch.nn.utils.clip_grad_norm_(self.netG.parameters(), max_norm=self.G_opts['optimizer_clipgrad'],
                                            norm_type=2)
 
-        self.log_dict['G_loss'] = G_loss.item()
-        self.log_dict['G_loss_detail'] = G_loss_detail
+        self.log_dict['loss_total'] = G_loss.item()
+        self.log_dict['loss_detail'] = G_loss_detail
         self.log_dict['G_lr'] = self.schedulerG.get_last_lr()[0]
-        
-
-        if self.train_opts['E_decay'] > 0:
-            self.update_E(self.train_opts['E_decay'])
 
     def optimizer_step(self):
         """

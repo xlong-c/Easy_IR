@@ -14,10 +14,8 @@ import torch
 from torch.optim import Optimizer
 import torch.optim.adam
 
-
 class EMA(Optimizer):
     """ This class implements Exponential Moving Average (EMA) for parameters of a model. It is used to"""
-
     def __init__(self, opt, ema_decay):
         self.ema_decay = ema_decay  # decay rate of the EMA
         self.apply_ema = self.ema_decay > 0.  # whether to apply EMA
@@ -75,6 +73,7 @@ class EMA(Optimizer):
     def swap_parameters_with_ema(self, store_params_in_ema):
         """ This function swaps parameters with their ema values. It records original parameters in the ema
         parameters, if store_params_in_ema is true."""
+        # 这个函数交换参数和它们的ema值。如果store_params_in_ema为true，它将记录原始参数在ema参数中。
 
         # stop here if we are not applying EMA
         if not self.apply_ema:

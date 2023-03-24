@@ -9,7 +9,7 @@ train:
   version: "001" # 版本号
   gpu_ids: [ 0 ] # 使用的GPU
   ncols: 80 # 进度条长度
-  E_decay: 0 # EMA的衰减率
+  E_decay: 0.9999 # EMA的衰减率,若为0则不使用EMA
   num_epoch: 2 # 训练的epoch数
   dist: False # 是否使用分布式训练
   amp: False # 是否使用混合精度训练
@@ -34,11 +34,11 @@ train:
       in_dim: 1
       out_dim: 1
     Loss_fn:
-      loss: null
-      # - L1loss
-      # - NMSE
-      weight: null
-      # - 1
+      loss:
+#       - L1loss
+       - NMSE
+      weight:
+       - 1
       # - 1
     optimizer:
       name: Adam
